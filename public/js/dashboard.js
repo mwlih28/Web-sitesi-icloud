@@ -102,11 +102,38 @@ async function loadUser() {
   }
   const name    = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   const initial = name[0]?.toUpperCase() || '?';
-  document.getElementById('user-greeting').textContent  = name;
-  document.getElementById('menu-name').textContent      = name;
-  document.getElementById('menu-email').textContent     = email;
+  document.getElementById('user-greeting') && (document.getElementById('user-greeting').textContent = name);
+  document.getElementById('menu-name').textContent       = name;
+  document.getElementById('menu-email').textContent      = email;
   document.getElementById('user-avatar-btn').textContent = initial;
-  document.getElementById('menu-avatar').textContent    = initial;
+  document.getElementById('menu-avatar').textContent     = initial;
+
+  // Profile hero card
+  const heroAv   = document.getElementById('profile-hero-av');
+  const heroName = document.getElementById('profile-hero-name');
+  const heroMail = document.getElementById('profile-hero-email');
+  if (heroAv)   heroAv.textContent   = initial;
+  if (heroName) heroName.textContent = name;
+  if (heroMail) heroMail.textContent = email;
+
+  // Load unseen count for profile stats
+  try {
+    const sr = await fetch('/api/mail/status');
+    if (sr.ok) {
+      const sd = await sr.json();
+      const unEl = document.getElementById('pstat-unseen');
+      if (unEl) unEl.textContent = sd.unseen ?? '—';
+      if (sd.unseen !== undefined) {
+        _lastUnseen = sd.unseen;
+        const badge = document.getElementById('sidebar-mail-badge');
+        if (badge) badge.innerHTML = sd.unseen ? `<span class="badge">${sd.unseen}</span>` : '';
+      }
+    }
+  } catch (_) {}
+
+  // Storage placeholder (iCloud storage API unavailable)
+  const storEl = document.getElementById('pstat-storage');
+  if (storEl) storEl.textContent = 'N/A';
 }
 
 async function logout() {
@@ -887,11 +914,13 @@ async function buildContacts() {
     if (!res.ok) throw new Error(data.error || 'Kişiler yüklenemedi');
     _contacts = data.contacts;
     renderContacts('');
-    // Sidebar + home stats güncelle
+    // Sidebar + home stats + profile hero güncelle
     const n = _contacts.length;
     const sb = document.getElementById('sidebar-contacts-count');
     if (sb) sb.textContent = n;
     setHomeSub('home-sub-contacts', `${n} kişi`);
+    const pcEl = document.getElementById('pstat-contacts');
+    if (pcEl) pcEl.textContent = n;
   } catch (err) {
     document.getElementById('contacts-body').innerHTML =
       `<div style="padding:28px;color:#ff3b30;text-align:center">${escHtml(err.message)}</div>`;

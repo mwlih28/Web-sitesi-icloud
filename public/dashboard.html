@@ -164,9 +164,43 @@
 
       <!-- HOME PAGE -->
       <div class="page-view active" id="page-home">
-        <h1 class="section-heading">Merhaba, <span id="user-greeting">Kullanıcı</span> 👋</h1>
-        <p class="section-sub">iCloud hesabınıza hoş geldiniz</p>
 
+        <!-- Profile Hero Card -->
+        <div class="profile-hero glass-card">
+          <div class="profile-hero-left">
+            <div class="profile-hero-av" id="profile-hero-av">?</div>
+            <div class="profile-hero-details">
+              <div class="profile-hero-name" id="profile-hero-name">Yükleniyor...</div>
+              <div class="profile-hero-email" id="profile-hero-email"></div>
+              <span class="profile-apple-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Apple ID
+              </span>
+            </div>
+          </div>
+          <div class="profile-hero-stats">
+            <div class="profile-stat-block">
+              <div class="profile-stat-val" id="pstat-unseen">—</div>
+              <div class="profile-stat-lbl">Okunmamış</div>
+            </div>
+            <div class="profile-stat-sep"></div>
+            <div class="profile-stat-block">
+              <div class="profile-stat-val" id="pstat-contacts">—</div>
+              <div class="profile-stat-lbl">Kişi</div>
+            </div>
+            <div class="profile-stat-sep"></div>
+            <div class="profile-stat-block">
+              <div class="profile-stat-val" id="pstat-storage">—</div>
+              <div class="profile-stat-lbl">Depolama</div>
+            </div>
+          </div>
+          <button class="profile-hero-btn" onclick="navigate('settings')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profil
+          </button>
+        </div>
+
+        <h2 class="section-heading" style="font-size:1.1rem;margin-bottom:14px;margin-top:28px;">Uygulamalar</h2>
         <div class="app-grid" id="home-app-grid">
           <!-- injected by JS -->
         </div>
