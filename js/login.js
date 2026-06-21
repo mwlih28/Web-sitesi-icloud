@@ -48,6 +48,8 @@ function doLogin() {
 }
 
 // ===== 2FA CODE INPUTS =====
+let demoCode = '';
+
 function setupCodeInputs() {
   const digits = document.querySelectorAll('.code-digit');
   digits.forEach((input, idx) => {
@@ -57,22 +59,46 @@ function setupCodeInputs() {
         digits[idx - 1].focus();
       }
     });
-    input.addEventListener('input', e => {
+    input.addEventListener('input', () => {
       const val = input.value.replace(/[^0-9]/g, '');
       input.value = val ? val[val.length - 1] : '';
       if (val && idx < digits.length - 1) digits[idx + 1].focus();
-      if (getCode().length === 6) verify2FA();
+      if (getCode().length === 6) setTimeout(verify2FA, 80);
     });
     input.addEventListener('paste', e => {
       e.preventDefault();
       const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
       [...pasted.slice(0, 6)].forEach((ch, i) => { if (digits[i]) digits[i].value = ch; });
-      const next = Math.min(pasted.length, 5);
-      digits[next].focus();
+      digits[Math.min(pasted.length, 5)].focus();
       if (getCode().length === 6) setTimeout(verify2FA, 100);
     });
   });
-  setTimeout(() => digits[0].focus(), 100);
+
+  // Demo kodu üret ve ekranda göster, sonra otomatik doldur
+  demoCode = String(Math.floor(100000 + Math.random() * 900000));
+  const displayEl = document.getElementById('demo-code-display');
+
+  // Önce kodu göster
+  setTimeout(() => {
+    if (displayEl) {
+      displayEl.textContent = demoCode.slice(0,3) + ' ' + demoCode.slice(3);
+      displayEl.classList.add('ready');
+    }
+  }, 800);
+
+  // Sonra kutulara tek tek yaz
+  setTimeout(() => {
+    digits[0].focus();
+    demoCode.split('').forEach((ch, i) => {
+      setTimeout(() => {
+        if (digits[i]) {
+          digits[i].value = ch;
+          if (i < digits.length - 1) digits[i + 1].focus();
+        }
+        if (i === 5) setTimeout(verify2FA, 200);
+      }, i * 120);
+    });
+  }, 1600);
 }
 
 function getCode() {
@@ -90,9 +116,11 @@ function verify2FA() {
 }
 
 function resendCode() {
-  showToast('Doğrulama kodu tekrar gönderildi.', 'info');
+  showToast('Yeni doğrulama kodu gönderildi.', 'info');
   document.querySelectorAll('.code-digit').forEach(d => { d.value = ''; });
-  document.querySelectorAll('.code-digit')[0].focus();
+  const displayEl = document.getElementById('demo-code-display');
+  if (displayEl) { displayEl.textContent = '— — — — — —'; displayEl.classList.remove('ready'); }
+  setupCodeInputs();
 }
 
 // ===== MODALS =====

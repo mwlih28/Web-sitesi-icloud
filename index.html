@@ -103,18 +103,26 @@
       <div class="login-step hidden" id="step-2fa">
         <h1>İki Faktörlü Doğrulama</h1>
         <p class="subtitle">
-          Apple kimliğinize bağlı güvenilir cihazlara veya
           <span id="phone-hint"></span> numaralı telefona doğrulama kodu gönderildi.
+          Kod birkaç saniye içinde otomatik doldurulacak.
         </p>
 
+        <div class="demo-code-banner" id="demo-code-banner">
+          <span class="demo-code-icon">📱</span>
+          <div>
+            <div class="demo-code-label">Demo Doğrulama Kodu</div>
+            <div class="demo-code-value" id="demo-code-display">— — — — — —</div>
+          </div>
+        </div>
+
         <div class="code-inputs">
-          <input type="text" maxlength="1" class="code-digit" data-idx="0" />
-          <input type="text" maxlength="1" class="code-digit" data-idx="1" />
-          <input type="text" maxlength="1" class="code-digit" data-idx="2" />
+          <input type="text" maxlength="1" class="code-digit" data-idx="0" inputmode="numeric" />
+          <input type="text" maxlength="1" class="code-digit" data-idx="1" inputmode="numeric" />
+          <input type="text" maxlength="1" class="code-digit" data-idx="2" inputmode="numeric" />
           <span class="code-dash">—</span>
-          <input type="text" maxlength="1" class="code-digit" data-idx="3" />
-          <input type="text" maxlength="1" class="code-digit" data-idx="4" />
-          <input type="text" maxlength="1" class="code-digit" data-idx="5" />
+          <input type="text" maxlength="1" class="code-digit" data-idx="3" inputmode="numeric" />
+          <input type="text" maxlength="1" class="code-digit" data-idx="4" inputmode="numeric" />
+          <input type="text" maxlength="1" class="code-digit" data-idx="5" inputmode="numeric" />
         </div>
 
         <p class="resend-row">
