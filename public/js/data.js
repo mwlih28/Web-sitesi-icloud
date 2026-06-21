@@ -101,20 +101,3 @@ const NOTIFICATIONS = [
   { icon:'💾', text:'Otomatik yedekleme tamamlandı',     time:'1 sa önce' },
 ];
 
-const ALBUMS = [
-  { id:1, name:'Favoriler',         count:128, cover:'https://picsum.photos/seed/alb_a/400/400' },
-  { id:2, name:'Videolar',          count:45,  cover:'https://picsum.photos/seed/alb_b/400/400' },
-  { id:3, name:'Ekran Görüntüleri', count:312, cover:'https://picsum.photos/seed/alb_c/400/400' },
-  { id:4, name:'Selfie',            count:67,  cover:'https://picsum.photos/seed/alb_d/400/400' },
-  { id:5, name:'Canlı Fotoğraflar', count:234, cover:'https://picsum.photos/seed/alb_e/400/400' },
-  { id:6, name:'Portre',            count:89,  cover:'https://picsum.photos/seed/alb_f/400/400' },
-  { id:7, name:'Panorama',          count:23,  cover:'https://picsum.photos/seed/alb_g/400/400' },
-  { id:8, name:'Yemek',             count:56,  cover:'https://picsum.photos/seed/alb_h/400/400' },
-];
-
-const MEMORIES = [
-  { id:1, title:'Bu Haftanın En İyileri', sub:'15 – 21 Haziran 2026', cover:'https://picsum.photos/seed/mem_a/900/520', count:23 },
-  { id:2, title:'Bir Yıl Önce Bugün',     sub:'Haziran 2025',         cover:'https://picsum.photos/seed/mem_b/900/520', count:18 },
-  { id:3, title:'Yaz Günleri',            sub:'Mayıs – Haziran 2026', cover:'https://picsum.photos/seed/mem_c/900/520', count:47 },
-  { id:4, title:'Özel Anlar',            sub:'2026',                  cover:'https://picsum.photos/seed/mem_d/900/520', count:34 },
-];

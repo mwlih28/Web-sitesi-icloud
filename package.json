@@ -12,7 +12,8 @@
     "express": "^4.18.2",
     "imapflow": "^1.0.162",
     "mailparser": "^3.6.9",
-    "nodemailer": "^6.9.9"
+    "nodemailer": "^6.9.9",
+    "tsdav": "^2.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

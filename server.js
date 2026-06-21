@@ -6,6 +6,7 @@ const { ImapFlow } = require('imapflow');
 const { simpleParser } = require('mailparser');
 const nodemailer   = require('nodemailer');
 const path         = require('path');
+const { createDAVClient } = require('tsdav');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -299,6 +300,140 @@ app.post('/api/mail/send', requireAuth, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Mail gönderilemedi: ' + err.message });
+  }
+});
+
+// ===== CARDDAV – KİŞİLER =====
+
+function parseVCard(str) {
+  if (!str) return null;
+  // Unfold long lines (RFC 6350)
+  str = str.replace(/\r\n[ \t]/g, '').replace(/\r\n/g, '\n');
+
+  const getOne = (key) => {
+    const m = str.match(new RegExp(`(?:^|\\n)${key}(?:;[^:\\n]*)?:(.+)`, 'i'));
+    return m ? m[1].trim() : '';
+  };
+  const getAll = (key) => {
+    const rx = new RegExp(`(?:^|\\n)${key}(?:;[^:\\n]*)?:(.+)`, 'gi');
+    return [...str.matchAll(rx)].map(m => m[1].trim());
+  };
+
+  const fn = getOne('FN');
+  const n  = getOne('N').split(';').slice(0, 2).reverse().filter(Boolean).join(' ');
+  const name = fn || n;
+  if (!name) return null;
+
+  const emails = getAll('EMAIL');
+  const phones = getAll('TEL').map(p => p.replace(/[^\d\s+\-().]/g, '').trim()).filter(Boolean);
+  const org    = getOne('ORG').split(';')[0];
+
+  const initials = name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('');
+  const COLORS   = ['#0071e3','#ff3b30','#34c759','#ff9500','#5856d6','#ff2d55','#00c7be','#8e8e93'];
+  const color    = COLORS[(name.charCodeAt(0) || 0) % COLORS.length];
+
+  return { name, email: emails[0] || '', phone: phones[0] || '', org, initials, color };
+}
+
+// GET /api/contacts
+app.get('/api/contacts', requireAuth, async (req, res) => {
+  const { email, password } = req.session.user;
+  try {
+    const client = await createDAVClient({
+      serverUrl: 'https://contacts.icloud.com',
+      credentials: { username: email, password },
+      authMethod: 'Basic',
+      defaultAccountType: 'carddav',
+    });
+    const books = await client.fetchAddressBooks();
+    if (!books.length) return res.json({ contacts: [] });
+
+    const vcards = await client.fetchVCards({ addressBook: books[0] });
+    const contacts = vcards
+      .map(v => parseVCard(v.data))
+      .filter(Boolean)
+      .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+
+    res.json({ contacts });
+  } catch (err) {
+    console.error('[CardDAV]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== CALDAV – TAKVİM =====
+
+function parseICalEvents(icsStr) {
+  if (!icsStr) return [];
+  const events = [];
+  const re = /BEGIN:VEVENT\r?\n([\s\S]*?)\r?\nEND:VEVENT/g;
+  let m;
+  while ((m = re.exec(icsStr)) !== null) {
+    const block = m[1];
+    const get = (key) => {
+      const rx = new RegExp(`(?:^|\\r?\\n)${key}(?:;[^:\\n]*)?:(.+)`, 'i');
+      const r = rx.exec(block);
+      return r ? r[1].replace(/\\n/g, ' ').replace(/\\,/g, ',').trim() : '';
+    };
+    const summary = get('SUMMARY');
+    if (!summary) continue;
+
+    const parseDate = (ds) => {
+      if (!ds) return null;
+      const s = ds.replace(/Z$/, '').replace(/T\d{6}$/, '');
+      const pm = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+      return pm ? new Date(+pm[1], +pm[2] - 1, +pm[3]) : new Date(ds);
+    };
+
+    events.push({
+      uid:      get('UID'),
+      title:    summary,
+      start:    parseDate(get('DTSTART')),
+      location: get('LOCATION'),
+    });
+  }
+  return events;
+}
+
+// GET /api/calendar/events
+app.get('/api/calendar/events', requireAuth, async (req, res) => {
+  const { email, password } = req.session.user;
+  try {
+    const client = await createDAVClient({
+      serverUrl: 'https://caldav.icloud.com',
+      credentials: { username: email, password },
+      authMethod: 'Basic',
+      defaultAccountType: 'caldav',
+    });
+    const calendars = await client.fetchCalendars();
+    if (!calendars.length) return res.json({ events: [] });
+
+    const now   = new Date();
+    const past  = new Date(now - 30  * 86400000);
+    const future= new Date(+now + 90 * 86400000);
+    const allEvents = [];
+
+    for (const cal of calendars.slice(0, 6)) {
+      try {
+        const objects = await client.fetchCalendarObjects({
+          calendar: cal,
+          timeRange: { start: past.toISOString(), end: future.toISOString() }
+        });
+        for (const obj of objects) {
+          parseICalEvents(obj.data).forEach(e =>
+            allEvents.push({ ...e, calName: cal.displayName || 'Takvim' })
+          );
+        }
+      } catch (_) { /* hatalı takvimi atla */ }
+    }
+
+    allEvents.sort((a, b) => (a.start || 0) - (b.start || 0));
+    res.json({
+      events: allEvents.map(e => ({ ...e, start: e.start ? e.start.toISOString() : null }))
+    });
+  } catch (err) {
+    console.error('[CalDAV]', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 

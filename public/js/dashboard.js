@@ -124,88 +124,44 @@ function buildHomeRecents() {
 // ===== PHOTOS =====
 function buildPhotos() {
   const c = document.getElementById('photos-container');
-  const todayPhotos = PHOTOS.filter(p => p.date.startsWith('Bugün'));
-  const dunPhotos   = PHOTOS.filter(p => p.date.startsWith('Dün'));
-  const older       = PHOTOS.filter(p => !p.date.startsWith('Bugün') && !p.date.startsWith('Dün'));
-
   c.innerHTML = `
-    <div class="photos-stats-bar">
-      <div class="photos-stat">
-        <span class="photos-stat-num">2.847</span>
-        <span class="photos-stat-label">Fotoğraf</span>
+    <div class="photos-unavailable">
+      <div class="photos-unavail-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
       </div>
-      <div class="photos-stat-divider"></div>
-      <div class="photos-stat">
-        <span class="photos-stat-num">45</span>
-        <span class="photos-stat-label">Video</span>
+      <h3 class="photos-unavail-title">Fotoğraflar bu uygulamada görüntülenemiyor</h3>
+      <p class="photos-unavail-text">
+        Apple, iCloud Fotoğrafları için Mail (IMAP), Kişiler (CardDAV) veya
+        Takvim (CalDAV) gibi bir açık protokol sunmuyor. Fotoğraflara erişmek
+        için tam Apple ID kimlik doğrulaması gerekiyor; bu uygulama şifresiyle
+        mümkün değil.
+      </p>
+      <div class="photos-unavail-actions">
+        <a href="https://www.icloud.com/photos/" target="_blank" rel="noopener" class="btn-primary" style="max-width:240px;text-decoration:none">
+          iCloud.com'da Aç
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+        <button class="btn-secondary" style="max-width:240px" onclick="openUpload('photo')">
+          📤 Dosya Yükle
+        </button>
       </div>
-      <div class="photos-stat-divider"></div>
-      <div class="photos-stat">
-        <span class="photos-stat-num">12,4 GB</span>
-        <span class="photos-stat-label">Alan Kullanımı</span>
+      <div class="photos-unavail-info">
+        <div class="photos-unavail-info-item">
+          <span class="ok">✓</span> Mail (IMAP)
+        </div>
+        <div class="photos-unavail-info-item">
+          <span class="ok">✓</span> Kişiler (CardDAV)
+        </div>
+        <div class="photos-unavail-info-item">
+          <span class="ok">✓</span> Takvim (CalDAV)
+        </div>
+        <div class="photos-unavail-info-item">
+          <span class="no">✕</span> Fotoğraflar (API yok)
+        </div>
       </div>
-      <span class="photos-sync-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg>
-        Az önce senkronize edildi
-      </span>
-    </div>
-
-    <div class="section-heading-row">
-      <h3 class="photos-section-title">Anılar</h3>
-      <span class="section-see-all" onclick="showToast('Tüm anılar açılıyor...','info')">Tümünü Gör</span>
-    </div>
-    <div class="memories-scroll">
-      ${MEMORIES.map(m => `
-        <div class="memory-card" onclick="showToast('${escHtml(m.title)} oynatılıyor...','info')">
-          <img src="${m.cover}" alt="${escHtml(m.title)}" class="memory-img" loading="lazy" />
-          <div class="memory-overlay">
-            <div class="memory-count">${m.count} fotoğraf</div>
-            <div class="memory-title">${m.title}</div>
-            <div class="memory-sub">${m.sub}</div>
-          </div>
-          <div class="memory-play-btn">▶</div>
-        </div>`).join('')}
-    </div>
-
-    <div class="section-heading-row">
-      <h3 class="photos-section-title">Albümler</h3>
-      <span class="section-see-all" onclick="showToast('Tüm albümler açılıyor...','info')">Tümünü Gör</span>
-    </div>
-    <div class="albums-grid">
-      ${ALBUMS.map(a => `
-        <div class="album-tile" onclick="showToast('"${escHtml(a.name)}" albümü açılıyor...','info')">
-          <div class="album-cover-wrap">
-            <img src="${a.cover}" alt="${escHtml(a.name)}" class="album-cover-img" loading="lazy" />
-          </div>
-          <div class="album-name">${a.name}</div>
-          <div class="album-count">${a.count}</div>
-        </div>`).join('')}
-    </div>
-
-    <div class="section-heading-row" style="margin-top:4px">
-      <h3 class="photos-section-title">Son Eklenen</h3>
-    </div>
-    ${renderPhotoSection('Bugün', todayPhotos)}
-    ${renderPhotoSection('Dün', dunPhotos)}
-    ${renderPhotoSection('21 Haziran', older)}
-  `;
-}
-
-function renderPhotoSection(label, photos) {
-  if (!photos.length) return '';
-  return `
-    <div class="photo-section-header">
-      <span class="photo-month">${label}</span>
-      <span class="photo-section-count">${photos.length} fotoğraf</span>
-    </div>
-    <div class="photo-grid">
-      ${photos.map(p => `
-        <div class="photo-cell" data-id="${p.id}" onclick="openLightbox(${p.id})">
-          <img src="${p.src}" alt="${p.name}" loading="lazy" />
-          <div class="photo-overlay">
-            <div class="photo-check">✓</div>
-          </div>
-        </div>`).join('')}
     </div>`;
 }
 
@@ -545,8 +501,10 @@ function escAttr(str) {
   return String(str).replace(/"/g, '&quot;');
 }
 
-// ===== CALENDAR =====
-function buildCalendar() {
+// ===== CALENDAR (GERÇEK CalDAV) =====
+let _calEvents = []; // gerçek takvim etkinlikleri
+
+async function buildCalendar() {
   const c = document.getElementById('calendar-container');
   c.innerHTML = `
     <div class="cal-grid">
@@ -568,50 +526,101 @@ function buildCalendar() {
       </div>
       <div class="cal-sidebar-panel">
         <h3>Yaklaşan Etkinlikler</h3>
-        <div id="upcoming-events"></div>
+        <div id="upcoming-events">
+          <div style="display:flex;align-items:center;gap:8px;color:var(--apple-gray);font-size:0.85rem">
+            <div class="btn-spinner" style="width:14px;height:14px;border-width:2px;border-color:rgba(0,0,0,0.12);border-top-color:var(--apple-blue)"></div>
+            Yükleniyor…
+          </div>
+        </div>
       </div>
     </div>`;
+
   renderCalendar();
+
+  try {
+    const res  = await fetch('/api/calendar/events');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Takvim yüklenemedi');
+    _calEvents = (data.events || []).map(e => ({
+      ...e,
+      startDate: e.start ? new Date(e.start) : null
+    }));
+    renderCalendar();
+  } catch (err) {
+    const up = document.getElementById('upcoming-events');
+    if (up) up.innerHTML = `<p style="color:#ff3b30;font-size:0.82rem">${escHtml(err.message)}</p>`;
+  }
 }
 
 function renderCalendar() {
+  if (!document.getElementById('cal-title')) return;
   const MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const MONTHS_SHORT = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
   document.getElementById('cal-title').textContent = `${MONTHS[calMonth]} ${calYear}`;
 
-  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const firstDay   = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-  const prevDays = new Date(calYear, calMonth, 0).getDate();
-  const today = new Date();
+  const prevDays   = new Date(calYear, calMonth, 0).getDate();
+  const today      = new Date();
+  const COLORS     = ['#0071e3','#ff3b30','#34c759','#ff9500','#5856d6','#ff2d55','#00c7be'];
+
+  // Events for this month from real data
+  const monthEvents = _calEvents.filter(e => {
+    if (!e.startDate) return false;
+    return e.startDate.getFullYear() === calYear && e.startDate.getMonth() === calMonth;
+  });
 
   let cells = '';
-  let totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
   for (let i = 0; i < totalCells; i++) {
     let day, isOther = false;
-    if (i < firstDay) { day = prevDays - firstDay + i + 1; isOther = true; }
-    else if (i >= firstDay + daysInMonth) { day = i - firstDay - daysInMonth + 1; isOther = true; }
-    else { day = i - firstDay + 1; }
+    if (i < firstDay)                        { day = prevDays - firstDay + i + 1; isOther = true; }
+    else if (i >= firstDay + daysInMonth)    { day = i - firstDay - daysInMonth + 1; isOther = true; }
+    else                                     { day = i - firstDay + 1; }
 
     const isToday = !isOther && day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
-    const evs = CALENDAR_EVENTS.filter(e => !isOther && e.day === day && e.month === calMonth && e.year === calYear);
+    const evs = isOther ? [] : monthEvents.filter(e => e.startDate.getDate() === day);
+
     cells += `
       <div class="cal-day ${isOther ? 'other-month' : ''} ${isToday ? 'today' : ''}">
         <div class="cal-day-num">${day}</div>
-        ${evs.slice(0,2).map(e => `<div class="cal-event ${e.color}" title="${e.title}">${e.title}</div>`).join('')}
-        ${evs.length > 2 ? `<div class="cal-event blue">+${evs.length-2} daha</div>` : ''}
+        ${evs.slice(0, 2).map((e, idx) => {
+          const bg = COLORS[idx % COLORS.length];
+          return `<div class="cal-event" style="background:${bg}22;color:${bg}" title="${escHtml(e.title)}">${escHtml(e.title)}</div>`;
+        }).join('')}
+        ${evs.length > 2 ? `<div class="cal-event" style="background:#0071e322;color:#0071e3">+${evs.length - 2} daha</div>` : ''}
       </div>`;
   }
   document.getElementById('cal-days-grid').innerHTML = cells;
 
-  // Upcoming
-  const upcoming = CALENDAR_EVENTS.filter(e => e.year === calYear && e.month === calMonth).slice(0,5);
-  document.getElementById('upcoming-events').innerHTML = upcoming.length ? upcoming.map(e => `
-    <div class="event-list-item">
-      <div class="event-dot" style="background:${{blue:'#0071e3',red:'#ff3b30',green:'#34c759',orange:'#ff9500'}[e.color]||'#0071e3'}"></div>
-      <div>
-        <div class="event-list-name">${e.title}</div>
-        <div class="event-list-time">${e.day} ${['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'][e.month]} — ${e.time}</div>
-      </div>
-    </div>`).join('') : '<p style="color:var(--apple-gray);font-size:0.85rem">Bu ay etkinlik yok.</p>';
+  // Upcoming sidebar
+  const upcoming = monthEvents
+    .filter(e => e.startDate >= new Date(calYear, calMonth, 1))
+    .sort((a, b) => a.startDate - b.startDate)
+    .slice(0, 8);
+
+  const upEl = document.getElementById('upcoming-events');
+  if (!upEl) return;
+
+  if (!_calEvents.length && !upcoming.length) {
+    upEl.innerHTML = '<p style="color:var(--apple-gray);font-size:0.85rem">Bu ay etkinlik yok.</p>';
+    return;
+  }
+
+  upEl.innerHTML = upcoming.length
+    ? upcoming.map((e, idx) => `
+      <div class="event-list-item">
+        <div class="event-dot" style="background:${COLORS[idx % COLORS.length]}"></div>
+        <div>
+          <div class="event-list-name">${escHtml(e.title)}</div>
+          <div class="event-list-time">
+            ${e.startDate.getDate()} ${MONTHS_SHORT[e.startDate.getMonth()]} ${e.startDate.getFullYear()}
+            ${e.location ? `· 📍 ${escHtml(e.location)}` : ''}
+            ${e.calName ? `<span style="opacity:0.6"> · ${escHtml(e.calName)}</span>` : ''}
+          </div>
+        </div>
+      </div>`).join('')
+    : '<p style="color:var(--apple-gray);font-size:0.85rem">Bu ay etkinlik yok.</p>';
 }
 
 function changeMonth(dir) {
@@ -738,18 +747,44 @@ function addReminder() {
   showToast('Anımsatıcı eklendi.', 'success');
 }
 
-// ===== CONTACTS =====
-function buildContacts() {
-  renderContacts('');
+// ===== CONTACTS (GERÇEK CardDAV) =====
+let _contacts = [];
+
+async function buildContacts() {
+  const c = document.getElementById('contacts-container');
+  c.innerHTML = `
+    <div class="contacts-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" class="contacts-search-input" id="contacts-search-input" placeholder="Kişi, telefon veya e-posta ara…" oninput="filterContacts(this.value)" />
+    </div>
+    <div id="contacts-body">
+      <div style="padding:40px;text-align:center;color:var(--apple-gray)">
+        <div class="btn-spinner" style="margin:0 auto 14px;display:block;width:22px;height:22px;border-width:2.5px;border-color:rgba(0,0,0,0.15);border-top-color:var(--apple-blue)"></div>
+        iCloud kişileri yükleniyor…
+      </div>
+    </div>`;
+
+  try {
+    const res  = await fetch('/api/contacts');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kişiler yüklenemedi');
+    _contacts = data.contacts;
+    renderContacts('');
+  } catch (err) {
+    document.getElementById('contacts-body').innerHTML =
+      `<div style="padding:28px;color:#ff3b30;text-align:center">${escHtml(err.message)}</div>`;
+  }
 }
 
 function filterContacts(query) {
-  renderContacts(query.trim().toLowerCase());
+  renderContacts((query || '').trim().toLowerCase());
 }
 
 function renderContacts(query) {
-  const c = document.getElementById('contacts-container');
-  const filtered = CONTACTS.filter(con =>
+  const body = document.getElementById('contacts-body');
+  if (!body) return;
+
+  const filtered = _contacts.filter(con =>
     !query ||
     con.name.toLowerCase().includes(query) ||
     con.phone.includes(query) ||
@@ -757,46 +792,43 @@ function renderContacts(query) {
   );
 
   const grouped = {};
-  [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'tr')).forEach(con => {
-    const letter = con.name[0].toUpperCase();
+  filtered.forEach(con => {
+    const letter = con.name[0]?.toUpperCase() || '#';
     if (!grouped[letter]) grouped[letter] = [];
     grouped[letter].push(con);
   });
 
-  c.innerHTML = `
-    <div class="contacts-search-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" class="contacts-search-input" placeholder="Kişi, telefon veya e-posta ara…"
-        value="${escHtml(query)}" oninput="filterContacts(this.value)" />
-    </div>
-    <div class="contacts-body">
-      ${Object.keys(grouped).length === 0
-        ? `<div style="padding:40px;text-align:center;color:var(--apple-gray)">Kişi bulunamadı.</div>`
-        : Object.entries(grouped).map(([letter, cons]) => `
-          <div class="contact-group">
-            <div class="contact-group-letter">${letter}</div>
-            ${cons.map(con => `
-              <div class="contact-row">
-                <div class="contact-avatar-circle" style="background:${con.color}">${con.initials}</div>
-                <div class="contact-row-info">
-                  <div class="contact-row-name">${con.name}</div>
-                  <div class="contact-row-sub">
-                    <span>${con.phone}</span>
-                    <span class="contact-row-dot">·</span>
-                    <span>${con.email}</span>
-                  </div>
-                </div>
-                <div class="contact-row-btns">
-                  <button class="contact-icon-btn" title="Ara" onclick="showToast('Aranıyor: ${con.phone}','info')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.71 3.41 2 2 0 0 1 3.68 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                  </button>
-                  <button class="contact-icon-btn" title="Mail Gönder" onclick="composeTo('${con.email}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                  </button>
-                </div>
-              </div>`).join('')}
+  if (!filtered.length) {
+    body.innerHTML = `<div style="padding:40px;text-align:center;color:var(--apple-gray)">${query ? 'Sonuç bulunamadı.' : 'Kişi yok.'}</div>`;
+    return;
+  }
+
+  body.innerHTML = `<div class="contacts-body">
+    ${Object.entries(grouped).sort(([a],[b]) => a.localeCompare(b,'tr')).map(([letter, cons]) => `
+      <div class="contact-group">
+        <div class="contact-group-letter">${letter}</div>
+        ${cons.map(con => `
+          <div class="contact-row">
+            <div class="contact-avatar-circle" style="background:${con.color}">${escHtml(con.initials)}</div>
+            <div class="contact-row-info">
+              <div class="contact-row-name">${escHtml(con.name)}</div>
+              <div class="contact-row-sub">
+                ${con.phone ? `<span>${escHtml(con.phone)}</span>` : ''}
+                ${con.phone && con.email ? `<span class="contact-row-dot">·</span>` : ''}
+                ${con.email ? `<span>${escHtml(con.email)}</span>` : ''}
+              </div>
+            </div>
+            <div class="contact-row-btns">
+              ${con.phone ? `<button class="contact-icon-btn" title="Ara" onclick="showToast('Aranıyor: ${escHtml(con.phone)}','info')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.71 3.41 2 2 0 0 1 3.68 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </button>` : ''}
+              ${con.email ? `<button class="contact-icon-btn" title="Mail Gönder" onclick="composeTo('${escHtml(con.email)}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </button>` : ''}
+            </div>
           </div>`).join('')}
-    </div>`;
+      </div>`).join('')}
+  </div>`;
 }
 
 function composeTo(email) {
