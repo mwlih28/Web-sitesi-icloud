@@ -177,6 +177,47 @@ input { font-family: var(--font); }
 .toast.info    { background: #007aff; }
 @keyframes toastIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: none; } }
 
+/* ===== DARK THEME ===== */
+[data-theme="dark"] {
+  --apple-dark:   #f2f2f7;
+  --apple-gray:   #98989d;
+  --apple-light:  #2c2c2e;
+  --glass-bg:     rgba(44,44,46,0.88);
+  --glass-border: rgba(255,255,255,0.08);
+  --shadow:       0 20px 60px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4);
+}
+[data-theme="dark"] body { background: #1c1c1e; color: #f2f2f7; }
+[data-theme="dark"] .bg-gradient {
+  background: linear-gradient(135deg, #0d0d1a 0%, #151528 40%, #0a0a1e 70%, #111128 100%);
+}
+[data-theme="dark"] .orb1 {
+  background: radial-gradient(circle, #0d1a3a 0%, #060d1e 60%, transparent 100%);
+  opacity: 0.7;
+}
+[data-theme="dark"] .orb2 {
+  background: radial-gradient(circle, #120d2a 0%, #08051a 60%, transparent 100%);
+  opacity: 0.7;
+}
+[data-theme="dark"] .modal-card {
+  background: #2c2c2e; color: #f2f2f7;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+}
+[data-theme="dark"] .modal-card p { color: #98989d; }
+[data-theme="dark"] .modal-close { background: rgba(255,255,255,0.08); color: #98989d; }
+[data-theme="dark"] .modal-close:hover { background: rgba(255,255,255,0.14); }
+[data-theme="dark"] .input-group input {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.12);
+  color: #f2f2f7;
+}
+[data-theme="dark"] .input-group input::placeholder { color: rgba(255,255,255,0.28); }
+[data-theme="dark"] .input-group input:focus {
+  background: rgba(255,255,255,0.1);
+  box-shadow: 0 0 0 3px rgba(0,113,227,0.25);
+}
+[data-theme="dark"] .divider { background: rgba(255,255,255,0.08); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+
 /* ===== UTIL ===== */
 .hidden { display: none !important; }
 

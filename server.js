@@ -94,7 +94,42 @@ app.get('/api/me', requireAuth, (req, res) => {
   res.json({ email: req.session.user.email });
 });
 
+// ===== MAIL BODY CACHE =====
+const _mailCache = new Map();
+const MAIL_CACHE_TTL = 10 * 60 * 1000;
+function getCached(key) {
+  const e = _mailCache.get(key);
+  if (!e) return null;
+  if (Date.now() - e.ts > MAIL_CACHE_TTL) { _mailCache.delete(key); return null; }
+  return e.data;
+}
+function setCache(key, data) {
+  _mailCache.set(key, { data, ts: Date.now() });
+  if (_mailCache.size > 200) {
+    const cut = Date.now() - MAIL_CACHE_TTL;
+    for (const [k, v] of _mailCache) { if (v.ts < cut) _mailCache.delete(k); }
+  }
+}
+
 // ===== MAIL ROUTES =====
+
+// GET /api/mail/status — hafif kontrol (bildirim polling için)
+app.get('/api/mail/status', requireAuth, async (req, res) => {
+  const { email, password } = req.session.user;
+  const client = makeImap(email, password);
+  try {
+    await client.connect();
+    const lock = await client.getMailboxLock('INBOX');
+    const total  = client.mailbox.exists;
+    const unseen = client.mailbox.unseen || 0;
+    lock.release();
+    await client.logout();
+    res.json({ total, unseen });
+  } catch (err) {
+    await client.logout().catch(() => {});
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // GET /api/mail/folders
 app.get('/api/mail/folders', requireAuth, async (req, res) => {
@@ -168,22 +203,23 @@ app.get('/api/mail/message/:uid', requireAuth, async (req, res) => {
   const uid    = parseInt(req.params.uid);
   const folder = req.query.folder || 'INBOX';
 
+  const cacheKey = `${email}:${folder}:${uid}`;
+  const cached = getCached(cacheKey);
+  if (cached) return res.json(cached);
+
   const client = makeImap(email, password);
   try {
     await client.connect();
     const lock = await client.getMailboxLock(folder);
 
-    // Okundu olarak işaretle
     await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true });
-
-    // Ham kaynağı çek ve mailparser ile ayrıştır
     const raw = await client.fetchOne(String(uid), { source: true }, { uid: true });
     const parsed = await simpleParser(raw.source);
 
     lock.release();
     await client.logout();
 
-    res.json({
+    const result = {
       uid,
       subject:  parsed.subject || '(Konu yok)',
       from:     parsed.from?.value?.[0]?.address || '',
@@ -198,7 +234,9 @@ app.get('/api/mail/message/:uid', requireAuth, async (req, res) => {
         contentType: a.contentType,
         size:        a.size
       }))
-    });
+    };
+    setCache(cacheKey, result);
+    res.json(result);
   } catch (err) {
     await client.logout().catch(() => {});
     res.status(500).json({ error: err.message });

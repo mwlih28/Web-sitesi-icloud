@@ -12,6 +12,7 @@ let activeMail = null;
 let activeReminder = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+  applyThemeIcons();
   loadUser();
   buildHomeApps();
   buildHomeRecents();
@@ -29,7 +30,64 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSearch();
   setupDragDrop();
   setupSidebarStorage();
+  initMailPolling();
 });
+
+// ===== TEMA =====
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  const next = isDark ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('icloud_theme', next);
+  applyThemeIcons();
+}
+
+function applyThemeIcons() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const moon = document.getElementById('theme-icon-moon');
+  const sun  = document.getElementById('theme-icon-sun');
+  if (moon) moon.style.display = isDark ? 'none' : '';
+  if (sun)  sun.style.display  = isDark ? '' : 'none';
+}
+
+// ===== BİLDİRİM POLLING =====
+let _lastUnseen = -1;
+
+async function initMailPolling() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+  // 60 saniyede bir kontrol et
+  setInterval(pollNewMail, 60000);
+}
+
+async function pollNewMail() {
+  try {
+    const res  = await fetch('/api/mail/status');
+    if (!res.ok) return;
+    const data = await res.json();
+    const unseen = data.unseen || 0;
+
+    // Sidebar badge güncelle
+    const badge = document.getElementById('sidebar-mail-badge');
+    if (badge) badge.innerHTML = unseen ? `<span class="badge">${unseen}</span>` : '';
+
+    // Yeni mail geldiyse bildirim göster
+    if (_lastUnseen >= 0 && unseen > _lastUnseen && Notification.permission === 'granted') {
+      const yeni = unseen - _lastUnseen;
+      const notif = new Notification('iCloud Mail', {
+        body: `${yeni} yeni mail var`,
+        icon: '/images/icloud-icon.svg',
+        badge: '/images/icloud-icon.svg',
+        tag: 'icloud-mail',
+        renotify: true
+      });
+      notif.onclick = () => { window.focus(); navigate('mail'); notif.close(); };
+    }
+    _lastUnseen = unseen;
+  } catch (_) {}
+}
 
 // ===== USER =====
 async function loadUser() {

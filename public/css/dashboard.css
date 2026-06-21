@@ -1006,3 +1006,166 @@
   .photo-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
   .main-content { overflow-x: hidden; }
 }
+
+/* ===== DARK THEME – DASHBOARD ===== */
+[data-theme="dark"] .icloud-header {
+  background: rgba(28,28,30,0.92);
+  border-bottom-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .header-search {
+  background: rgba(255,255,255,0.08); color: #f2f2f7;
+}
+[data-theme="dark"] .header-search::placeholder { color: rgba(255,255,255,0.3); }
+[data-theme="dark"] .header-search:focus { background: rgba(255,255,255,0.12); border-color: var(--apple-blue); }
+[data-theme="dark"] .header-btn { color: #636366; }
+[data-theme="dark"] .header-btn:hover { background: rgba(255,255,255,0.08); color: #f2f2f7; }
+
+[data-theme="dark"] .sidebar {
+  background: rgba(28,28,30,0.92);
+  border-right-color: rgba(255,255,255,0.07);
+}
+[data-theme="dark"] .sidebar-item { color: #e5e5ea; }
+[data-theme="dark"] .sidebar-item:hover { background: rgba(255,255,255,0.06); }
+[data-theme="dark"] .sidebar-section-title { color: #48484a; }
+[data-theme="dark"] .sidebar-divider { background: rgba(255,255,255,0.07); }
+[data-theme="dark"] .storage-label { color: #636366; }
+[data-theme="dark"] .storage-bar { background: rgba(255,255,255,0.1); }
+
+[data-theme="dark"] .section-heading { color: #f2f2f7; }
+[data-theme="dark"] .section-sub { color: #636366; }
+
+[data-theme="dark"] .app-tile {
+  background: rgba(44,44,46,0.88);
+  border-color: rgba(255,255,255,0.07);
+}
+[data-theme="dark"] .app-tile:hover { background: rgba(58,58,60,0.95); }
+[data-theme="dark"] .app-tile-name { color: #f2f2f7; }
+[data-theme="dark"] .app-tile-sub { color: #636366; }
+
+[data-theme="dark"] .recents-list {
+  background: rgba(44,44,46,0.88);
+  border-color: rgba(255,255,255,0.07);
+}
+[data-theme="dark"] .recent-item { border-bottom-color: rgba(255,255,255,0.06); }
+[data-theme="dark"] .recent-item:hover { background: rgba(255,255,255,0.05); }
+[data-theme="dark"] .recent-name { color: #f2f2f7; }
+[data-theme="dark"] .recent-meta { color: #636366; }
+
+/* Mail dark */
+[data-theme="dark"] .mail-layout {
+  background: rgba(28,28,30,0.95);
+  border-color: rgba(255,255,255,0.07);
+}
+[data-theme="dark"] .mail-list { border-right-color: rgba(255,255,255,0.07); }
+[data-theme="dark"] .mail-list-header {
+  background: rgba(44,44,46,0.6);
+  border-bottom-color: rgba(255,255,255,0.07);
+}
+[data-theme="dark"] .mail-list-header h3 { color: #f2f2f7; }
+[data-theme="dark"] .mail-count { color: #636366; }
+[data-theme="dark"] .mail-item { border-bottom-color: rgba(255,255,255,0.05); }
+[data-theme="dark"] .mail-item:hover { background: rgba(255,255,255,0.05); }
+[data-theme="dark"] .mail-item.active { background: rgba(0,113,227,0.22); }
+[data-theme="dark"] .mail-item.unread { background: rgba(0,113,227,0.08); }
+[data-theme="dark"] .mail-sender { color: #e5e5ea; }
+[data-theme="dark"] .mail-subject { color: #c7c7cc; }
+[data-theme="dark"] .mail-time { color: #48484a; }
+[data-theme="dark"] .mail-detail { background: rgba(28,28,30,0.95); }
+[data-theme="dark"] .mail-detail-toolbar {
+  background: rgba(44,44,46,0.6);
+  border-bottom-color: rgba(255,255,255,0.07);
+}
+[data-theme="dark"] .mail-action-btn:hover { background: rgba(0,113,227,0.15); }
+[data-theme="dark"] .mail-action-btn.danger:hover { background: rgba(255,59,48,0.15); }
+[data-theme="dark"] .mail-toolbar-sep { background: rgba(255,255,255,0.1); }
+[data-theme="dark"] .mail-sender-card {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .mail-detail-subject { color: #f2f2f7; }
+[data-theme="dark"] .mail-sender-name { color: #f2f2f7; }
+[data-theme="dark"] .mail-sender-email,
+[data-theme="dark"] .mail-sender-to,
+[data-theme="dark"] .mail-sender-date { color: #636366; }
+[data-theme="dark"] .mail-body-area { color: #e5e5ea; }
+[data-theme="dark"] .mail-attach-chip { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.08); }
+[data-theme="dark"] .mail-attach-size { color: #636366; }
+[data-theme="dark"] .mail-attach-title { color: #636366; }
+[data-theme="dark"] .mail-empty { color: #48484a; }
+
+/* Calendar dark */
+[data-theme="dark"] .cal-day { color: #e5e5ea; }
+[data-theme="dark"] .cal-day.other-month { color: #48484a; }
+[data-theme="dark"] .cal-sidebar-panel {
+  background: rgba(44,44,46,0.88);
+  border-color: rgba(255,255,255,0.07);
+}
+[data-theme="dark"] .cal-sidebar-panel h3 { color: #f2f2f7; }
+[data-theme="dark"] .event-list-name { color: #f2f2f7; }
+[data-theme="dark"] .event-list-time { color: #636366; }
+[data-theme="dark"] .cal-nav-btn { background: rgba(255,255,255,0.08); color: #f2f2f7; }
+[data-theme="dark"] .cal-nav-btn:hover { background: rgba(255,255,255,0.14); }
+
+/* Notes dark */
+[data-theme="dark"] .notes-list {
+  background: rgba(44,44,46,0.88);
+  border-color: rgba(255,255,255,0.07);
+}
+[data-theme="dark"] .notes-list-header h3 { color: #f2f2f7; }
+[data-theme="dark"] .note-item { border-bottom-color: rgba(255,255,255,0.06); }
+[data-theme="dark"] .note-item:hover { background: rgba(255,255,255,0.05); }
+[data-theme="dark"] .note-item.active { background: rgba(0,113,227,0.2); }
+[data-theme="dark"] .note-title-text { color: #f2f2f7; }
+[data-theme="dark"] .note-preview,
+[data-theme="dark"] .note-date { color: #636366; }
+[data-theme="dark"] .note-editor { background: rgba(28,28,30,0.6); }
+[data-theme="dark"] .note-editor-title { color: #f2f2f7; background: transparent; border-bottom-color: rgba(255,255,255,0.1); }
+[data-theme="dark"] .note-editor-body { color: #e5e5ea; background: transparent; }
+[data-theme="dark"] .local-notes-banner {
+  background: rgba(255,149,0,0.12);
+  border-color: rgba(255,149,0,0.22);
+  color: #ffd60a;
+}
+
+/* Contacts dark */
+[data-theme="dark"] .contacts-search-wrap { background: rgba(44,44,46,0.6); border-bottom-color: rgba(255,255,255,0.07); }
+[data-theme="dark"] .contacts-search-input { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.1); color: #f2f2f7; }
+[data-theme="dark"] .contact-group-letter { color: var(--apple-blue); }
+[data-theme="dark"] .contact-row { border-bottom-color: rgba(255,255,255,0.06); }
+[data-theme="dark"] .contact-row:hover { background: rgba(255,255,255,0.05); }
+[data-theme="dark"] .contact-row-name { color: #f2f2f7; }
+[data-theme="dark"] .contact-row-sub { color: #636366; }
+[data-theme="dark"] .contact-icon-btn { background: rgba(255,255,255,0.08); }
+
+/* Reminders dark */
+[data-theme="dark"] .reminder-row { border-bottom-color: rgba(255,255,255,0.06); }
+[data-theme="dark"] .reminder-title { color: #f2f2f7; }
+[data-theme="dark"] .reminder-meta { color: #636366; }
+[data-theme="dark"] .reminders-section-title { color: #636366; }
+
+/* Misc dark */
+[data-theme="dark"] .select-btn {
+  background: rgba(255,255,255,0.08);
+  color: #e5e5ea;
+  border-color: rgba(255,255,255,0.12);
+}
+[data-theme="dark"] .select-btn:hover { background: rgba(255,255,255,0.14); }
+[data-theme="dark"] .user-menu {
+  background: rgba(38,38,40,0.97);
+  border-color: rgba(255,255,255,0.1);
+}
+[data-theme="dark"] .user-menu-header { border-bottom-color: rgba(255,255,255,0.08); }
+[data-theme="dark"] .user-menu-name { color: #f2f2f7; }
+[data-theme="dark"] .user-menu-email { color: #636366; }
+[data-theme="dark"] .user-menu-item { color: #e5e5ea; }
+[data-theme="dark"] .user-menu-item:hover { background: rgba(255,255,255,0.07); }
+[data-theme="dark"] .user-menu-divider { background: rgba(255,255,255,0.08); }
+[data-theme="dark"] .page-unavailable { color: #636366; }
+[data-theme="dark"] .page-unavail-title { color: #f2f2f7; }
+[data-theme="dark"] .page-unavail-text { color: #636366; }
+[data-theme="dark"] .glass-card {
+  background: rgba(44,44,46,0.88);
+  border-color: rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .photo-toolbar h2,
+[data-theme="dark"] .drive-toolbar h2 { color: #f2f2f7; }
