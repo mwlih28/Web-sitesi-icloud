@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="css/main.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="icon" type="image/svg+xml" href="images/icloud-icon.svg" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0071e3" />
   <script>(function(){var t=localStorage.getItem('icloud_theme')||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);})();</script>
 </head>
 <body class="dashboard-page">
@@ -304,6 +306,15 @@
         <div id="settings-container"><!-- injected --></div>
       </div>
 
+      <!-- SEARCH RESULTS -->
+      <div class="page-view" id="page-search">
+        <div class="photo-toolbar">
+          <h2>Arama: "<span id="search-query-display"></span>"</h2>
+          <button class="select-btn" onclick="navigate('home')">✕ Kapat</button>
+        </div>
+        <div id="search-results-container"><!-- injected --></div>
+      </div>
+
     </main>
   </div><!-- /dashboard-layout -->
 
@@ -335,11 +346,15 @@
   <div class="modal-overlay hidden" id="compose-modal">
     <div class="modal-card" style="max-width:540px;width:100%">
       <button class="modal-close" onclick="closeModal('compose-modal')">✕</button>
-      <h2>Yeni Mail</h2>
-      <div class="input-group" style="margin-top:16px"><input type="email" id="compose-to" placeholder="Kime" /></div>
-      <div class="input-group"><input type="text" id="compose-subject" placeholder="Konu" /></div>
-      <textarea id="compose-body" style="width:100%;min-height:160px;padding:14px;border:1.5px solid rgba(0,0,0,0.12);border-radius:12px;font-family:var(--font);font-size:0.9rem;resize:vertical;outline:none;margin-bottom:16px;" placeholder="Mesajınızı yazın..."></textarea>
-      <button class="btn-primary" onclick="sendMail()">Gönder ↗</button>
+      <h2 id="compose-modal-title">Yeni Mail</h2>
+      <input type="hidden" id="compose-reply-uid" value="" />
+      <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+        <input class="compose-field" type="email" id="compose-to" placeholder="Kime" />
+        <input class="compose-field" type="email" id="compose-cc" placeholder="CC (isteğe bağlı)" />
+        <input class="compose-field" type="text" id="compose-subject" placeholder="Konu" />
+        <textarea id="compose-body" class="compose-body" placeholder="Mesajınızı yazın..."></textarea>
+      </div>
+      <button class="btn-primary" style="margin-top:12px" onclick="sendMail()">Gönder ↗</button>
     </div>
   </div>
 
@@ -354,5 +369,12 @@
   <div id="toast-container"></div>
   <script src="js/data.js"></script>
   <script src="js/dashboard.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

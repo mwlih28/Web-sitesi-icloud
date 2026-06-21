@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="css/main.css" />
   <link rel="stylesheet" href="css/login.css" />
   <link rel="icon" type="image/svg+xml" href="images/icloud-icon.svg" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0071e3" />
 </head>
 <body class="login-page">
 
@@ -135,5 +137,12 @@
 
   <div id="toast-container"></div>
   <script src="js/login.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

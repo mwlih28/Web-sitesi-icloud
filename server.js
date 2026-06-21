@@ -341,6 +341,49 @@ app.post('/api/mail/send', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/mail/search?q=...&folder=INBOX
+app.get('/api/mail/search', requireAuth, async (req, res) => {
+  const { email, password } = req.session.user;
+  const q      = (req.query.q || '').trim();
+  const folder = req.query.folder || 'INBOX';
+  if (!q) return res.json({ messages: [] });
+
+  const client = makeImap(email, password);
+  try {
+    await client.connect();
+    const lock = await client.getMailboxLock(folder);
+
+    const criteria = { or: [{ subject: q }, { from: q }, { text: q }] };
+    const uids = await client.search(criteria, { uid: true });
+
+    const messages = [];
+    if (uids.length) {
+      const limited = uids.slice(-40);
+      for await (const msg of client.fetch(limited, {
+        uid: true, flags: true, envelope: true
+      }, { uid: true })) {
+        messages.push({
+          uid:      msg.uid,
+          subject:  msg.envelope.subject || '(Konu yok)',
+          from:     msg.envelope.from?.[0]?.address   || '',
+          fromName: msg.envelope.from?.[0]?.name      || msg.envelope.from?.[0]?.address || '(Bilinmiyor)',
+          date:     msg.envelope.date,
+          seen:     msg.flags.has('\\Seen'),
+          flagged:  msg.flags.has('\\Flagged')
+        });
+      }
+      messages.reverse();
+    }
+
+    lock.release();
+    await client.logout();
+    res.json({ messages, folder });
+  } catch (err) {
+    await client.logout().catch(() => {});
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ===== CALDAV – ANIMSATICIlar (VTODO) =====
 
 function parseICalTodos(icsStr) {

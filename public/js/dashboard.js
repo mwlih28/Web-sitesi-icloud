@@ -159,7 +159,7 @@ const pageTitles = {
   home:'Ana Sayfa', photos:'Fotoğraflar', drive:'iCloud Drive',
   mail:'Mail', calendar:'Takvim', contacts:'Kişiler',
   notes:'Notlar', reminders:'Anımsatıcılar', find:'Bul',
-  storage:'Depolama', settings:'Ayarlar'
+  storage:'Depolama', settings:'Ayarlar', search:'Arama'
 };
 
 // ===== HOME =====
@@ -308,9 +308,15 @@ function navigateDrive() {}
 function createFolder() {}
 
 // ===== MAIL (GERÇEK iCLOUD IMAP) =====
-let mailFolder = 'INBOX';
-let mailPage   = 1;
-let mailTotal  = 0;
+let mailFolder        = 'INBOX';
+let mailPage          = 1;
+let mailTotal         = 0;
+let _mailHasMore      = false;
+let _mailLoadingMore  = false;
+let _mailSearchMode   = false;
+let _mailSearchTimer  = null;
+let _mailMeta         = {};     // uid → {flagged, seen}
+let _activeMailData   = null;
 
 function buildMail() {
   const c = document.getElementById('mail-container');
@@ -320,13 +326,17 @@ function buildMail() {
         <h3 id="mail-folder-title">Gelen Kutusu</h3>
         <span class="mail-count" id="mail-unread-count">yükleniyor…</span>
       </div>
+      <div class="mail-search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="mail-search-input" class="mail-search-input" type="search" placeholder="Maillerinde ara…" oninput="onMailSearch(this.value)" />
+        <button id="mail-search-clear" class="mail-search-clear hidden" onclick="clearMailSearch()">✕</button>
+      </div>
       <div id="mail-items" style="overflow-y:auto;flex:1">
         <div style="padding:32px;text-align:center;color:var(--apple-gray)">
           <div class="btn-spinner" style="margin:0 auto 12px;display:block"></div>
           Mailler yükleniyor…
         </div>
       </div>
-      <div id="mail-pagination" style="padding:10px 14px;border-top:1px solid rgba(0,0,0,0.07);display:flex;gap:8px;justify-content:center;flex-shrink:0"></div>
     </div>
     <div class="mail-detail" id="mail-detail">
       <div class="mail-empty">
@@ -337,14 +347,26 @@ function buildMail() {
         <span>Bir mail seçerek okuyun</span>
       </div>
     </div>`;
-  fetchMails();
+  fetchMails(1, false);
+  document.getElementById('mail-items').addEventListener('scroll', onMailListScroll);
 }
 
-async function fetchMails(page) {
-  if (page) mailPage = page;
+async function fetchMails(page = 1, append = false) {
+  if (_mailLoadingMore && append) return;
+  if (append) _mailLoadingMore = true;
+  mailPage = page;
   const items = document.getElementById('mail-items');
   if (!items) return;
-  items.innerHTML = '<div style="padding:24px;text-align:center;color:var(--apple-gray)"><div class="btn-spinner" style="margin:0 auto 10px;display:block"></div>Yükleniyor…</div>';
+
+  if (!append) {
+    items.innerHTML = '<div style="padding:24px;text-align:center;color:var(--apple-gray)"><div class="btn-spinner" style="margin:0 auto 10px;display:block"></div>Yükleniyor…</div>';
+  } else {
+    const spin = document.createElement('div');
+    spin.id = 'mail-more-spinner';
+    spin.style.cssText = 'padding:14px;text-align:center;flex-shrink:0';
+    spin.innerHTML = '<div class="btn-spinner" style="margin:0 auto;display:block;border-color:rgba(0,0,0,0.1);border-top-color:var(--apple-blue)"></div>';
+    items.appendChild(spin);
+  }
 
   try {
     const res  = await fetch(`/api/mail/messages?folder=${encodeURIComponent(mailFolder)}&page=${mailPage}`);
@@ -352,49 +374,109 @@ async function fetchMails(page) {
     if (!res.ok) throw new Error(data.error || 'Hata');
 
     mailTotal = data.total;
-    const count = document.getElementById('mail-unread-count');
-    if (count) count.textContent = data.unseen ? `${data.unseen} okunmamış` : '';
+    const totalPages = Math.ceil(mailTotal / (data.perPage || 30));
+    _mailHasMore = mailPage < totalPages;
 
-    // Sidebar + home stats güncelle
-    const badge = document.getElementById('sidebar-mail-badge');
-    if (badge) badge.innerHTML = data.unseen ? `<span class="badge">${data.unseen}</span>` : '';
-    setHomeSub('home-sub-mail', data.unseen ? `${data.unseen} okunmamış` : `${data.total} mail`);
-    updateHomeRecents(data.messages || []);
+    if (!append) {
+      const count = document.getElementById('mail-unread-count');
+      if (count) count.textContent = data.unseen ? `${data.unseen} okunmamış` : '';
+      const badge = document.getElementById('sidebar-mail-badge');
+      if (badge) badge.innerHTML = data.unseen ? `<span class="badge">${data.unseen}</span>` : '';
+      setHomeSub('home-sub-mail', data.unseen ? `${data.unseen} okunmamış` : `${data.total} mail`);
+      updateHomeRecents(data.messages || []);
+      _mailMeta = {};
+    }
 
-    if (!data.messages.length) {
-      items.innerHTML = '<div style="padding:32px;text-align:center;color:var(--apple-gray)">Bu klasörde mail yok.</div>';
+    document.getElementById('mail-more-spinner')?.remove();
+
+    if (!data.messages?.length) {
+      if (!append) items.innerHTML = '<div style="padding:32px;text-align:center;color:var(--apple-gray)">Bu klasörde mail yok.</div>';
       return;
     }
 
-    const MAIL_COLORS = ['#0071e3','#ff3b30','#34c759','#ff9500','#5856d6','#ff2d55','#00c7be','#8e8e93'];
-    items.innerHTML = data.messages.map(m => {
-      const sName = m.fromName || m.from || '?';
-      const initials = sName.split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || '').join('') || '?';
-      const color = MAIL_COLORS[(sName.charCodeAt(0) || 0) % MAIL_COLORS.length];
-      return `
-      <div class="mail-item ${m.seen ? '' : 'unread'}" id="mail-item-${m.uid}" onclick="openMail(${m.uid})">
-        <div class="mail-item-av" style="background:${color}">${escHtml(initials)}</div>
-        <div class="mail-item-body">
-          <div class="mail-item-row1">
-            <span class="mail-sender">${m.seen ? '' : '<span class="unread-dot"></span>'}${escHtml(sName)}</span>
-            <span class="mail-time">${formatMailDate(m.date)}</span>
-          </div>
-          <div class="mail-subject">${escHtml(m.subject)}</div>
-        </div>
-      </div>`;
-    }).join('');
+    const newHtml = buildMailItemsHtml(data.messages);
 
-    // Sayfalama
-    const pagination = document.getElementById('mail-pagination');
-    const totalPages = Math.ceil(mailTotal / data.perPage);
-    if (totalPages > 1 && pagination) {
-      pagination.innerHTML = `
-        <button class="select-btn" onclick="fetchMails(${mailPage - 1})" ${mailPage <= 1 ? 'disabled style="opacity:0.4"' : ''}>‹ Önceki</button>
-        <span style="font-size:0.82rem;color:var(--apple-gray);align-self:center">${mailPage} / ${totalPages}</span>
-        <button class="select-btn" onclick="fetchMails(${mailPage + 1})" ${mailPage >= totalPages ? 'disabled style="opacity:0.4"' : ''}>Sonraki ›</button>`;
+    if (append) {
+      const temp = document.createElement('div');
+      temp.innerHTML = newHtml;
+      while (temp.firstChild) items.appendChild(temp.firstChild);
+    } else {
+      items.innerHTML = newHtml;
     }
   } catch (err) {
-    items.innerHTML = `<div style="padding:24px;text-align:center;color:#ff3b30">${escHtml(err.message)}</div>`;
+    document.getElementById('mail-more-spinner')?.remove();
+    if (!append) items.innerHTML = `<div style="padding:24px;text-align:center;color:#ff3b30">${escHtml(err.message)}</div>`;
+  } finally {
+    _mailLoadingMore = false;
+  }
+}
+
+const MAIL_COLORS = ['#0071e3','#ff3b30','#34c759','#ff9500','#5856d6','#ff2d55','#00c7be','#8e8e93'];
+
+function buildMailItemsHtml(messages) {
+  return messages.map(m => {
+    _mailMeta[m.uid] = { flagged: m.flagged, seen: m.seen };
+    const sName = m.fromName || m.from || '?';
+    const initials = sName.split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || '').join('') || '?';
+    const color = MAIL_COLORS[(sName.charCodeAt(0) || 0) % MAIL_COLORS.length];
+    return `
+    <div class="mail-item ${m.seen ? '' : 'unread'} ${m.flagged ? 'flagged' : ''}" id="mail-item-${m.uid}" onclick="openMail(${m.uid})">
+      <div class="mail-item-av" style="background:${color}">${escHtml(initials)}</div>
+      <div class="mail-item-body">
+        <div class="mail-item-row1">
+          <span class="mail-sender">${m.seen ? '' : '<span class="unread-dot"></span>'}${escHtml(sName)}</span>
+          <span class="mail-time">${formatMailDate(m.date)}</span>
+        </div>
+        <div class="mail-subject">${escHtml(m.subject)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function onMailListScroll() {
+  const items = document.getElementById('mail-items');
+  if (!items || !_mailHasMore || _mailLoadingMore || _mailSearchMode) return;
+  if (items.scrollHeight - items.scrollTop - items.clientHeight < 140) {
+    fetchMails(mailPage + 1, true);
+  }
+}
+
+// ===== MAIL SEARCH (panel içi) =====
+function onMailSearch(val) {
+  const clearBtn = document.getElementById('mail-search-clear');
+  if (clearBtn) clearBtn.classList.toggle('hidden', !val.trim());
+  clearTimeout(_mailSearchTimer);
+  if (!val.trim()) { _mailSearchMode = false; fetchMails(1, false); return; }
+  _mailSearchTimer = setTimeout(() => searchMailPanel(val.trim()), 420);
+}
+
+function clearMailSearch() {
+  const inp = document.getElementById('mail-search-input');
+  if (inp) inp.value = '';
+  document.getElementById('mail-search-clear')?.classList.add('hidden');
+  _mailSearchMode = false;
+  fetchMails(1, false);
+}
+
+async function searchMailPanel(q) {
+  _mailSearchMode = true;
+  const items = document.getElementById('mail-items');
+  if (!items) return;
+  items.innerHTML = '<div style="padding:24px;text-align:center;color:var(--apple-gray)"><div class="btn-spinner" style="margin:0 auto 10px;display:block"></div>Aranıyor…</div>';
+  try {
+    const res  = await fetch(`/api/mail/search?q=${encodeURIComponent(q)}&folder=${encodeURIComponent(mailFolder)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Hata');
+    const count = document.getElementById('mail-unread-count');
+    if (!data.messages?.length) {
+      if (count) count.textContent = '0 sonuç';
+      items.innerHTML = `<div style="padding:32px;text-align:center;color:var(--apple-gray)">"${escHtml(q)}" için mail bulunamadı.</div>`;
+      return;
+    }
+    if (count) count.textContent = `${data.messages.length} sonuç`;
+    items.innerHTML = buildMailItemsHtml(data.messages);
+  } catch (err) {
+    items.innerHTML = `<div style="padding:24px;color:#ff3b30">${escHtml(err.message)}</div>`;
   }
 }
 
@@ -404,10 +486,10 @@ function mailBack() {
 
 async function openMail(uid) {
   activeMail = uid;
+  _activeMailData = null;
   document.querySelectorAll('.mail-item').forEach(el => el.classList.remove('active'));
   const item = document.getElementById(`mail-item-${uid}`);
   if (item) { item.classList.add('active'); item.classList.remove('unread'); item.querySelector('.unread-dot')?.remove(); }
-  // Mobilde Gmail gibi detayı tam ekran aç
   document.getElementById('mail-container')?.classList.add('detail-open');
 
   const detail = document.getElementById('mail-detail');
@@ -418,7 +500,10 @@ async function openMail(uid) {
     const m    = await res.json();
     if (!res.ok) throw new Error(m.error || 'Yüklenemedi');
 
-    const MAIL_COLORS = ['#0071e3','#ff3b30','#34c759','#ff9500','#5856d6','#ff2d55','#00c7be','#8e8e93'];
+    // Flag durumunu mail listesinden al
+    const metaFlagged = _mailMeta[uid]?.flagged || false;
+    _activeMailData = { ...m, flagged: metaFlagged };
+
     const sName = m.fromName || m.from || '?';
     const initials = sName.split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || '').join('') || '?';
     const sColor = MAIL_COLORS[(sName.charCodeAt(0) || 0) % MAIL_COLORS.length];
@@ -443,9 +528,9 @@ async function openMail(uid) {
           İlet
         </button>
         <div class="mail-toolbar-sep"></div>
-        <button class="mail-action-btn" onclick="toggleFlag(${uid})">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          Yıldızla
+        <button class="mail-action-btn ${metaFlagged ? 'active' : ''}" id="mail-star-btn-${uid}" onclick="toggleFlag(${uid})" title="${metaFlagged ? 'Yıldızı Kaldır' : 'Yıldızla'}">
+          <svg viewBox="0 0 24 24" fill="${metaFlagged ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          ${metaFlagged ? 'Yıldızlı' : 'Yıldızla'}
         </button>
         <div style="flex:1"></div>
         <button class="mail-action-btn danger" onclick="deleteMail(${uid})">
@@ -496,39 +581,75 @@ async function deleteMail(uid) {
 }
 
 async function toggleFlag(uid) {
+  const newVal = !(_activeMailData?.flagged);
   try {
-    await fetch(`/api/mail/message/${uid}/flag`, {
+    const res = await fetch(`/api/mail/message/${uid}/flag`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ folder: mailFolder, flag: '\\Flagged', value: true })
+      body: JSON.stringify({ folder: mailFolder, flag: '\\Flagged', value: newVal })
     });
-    showToast('Yıldızlandı.', 'success');
+    if (!res.ok) throw new Error();
+    if (_activeMailData) _activeMailData.flagged = newVal;
+    if (_mailMeta[uid]) _mailMeta[uid].flagged = newVal;
+
+    const btn = document.getElementById(`mail-star-btn-${uid}`);
+    if (btn) {
+      btn.classList.toggle('active', newVal);
+      btn.title = newVal ? 'Yıldızı Kaldır' : 'Yıldızla';
+      btn.querySelector('svg').setAttribute('fill', newVal ? 'currentColor' : 'none');
+      btn.childNodes[btn.childNodes.length - 1].textContent = newVal ? ' Yıldızlı' : ' Yıldızla';
+    }
+    const listItem = document.getElementById(`mail-item-${uid}`);
+    if (listItem) listItem.classList.toggle('flagged', newVal);
+    showToast(newVal ? 'Yıldızlandı.' : 'Yıldız kaldırıldı.', 'success');
   } catch (_) { showToast('İşlem başarısız.', 'error'); }
 }
 
 function replyMail(uid) {
+  const m = _activeMailData;
+  if (!m) return;
+  document.getElementById('compose-modal-title').textContent = 'Yanıtla';
+  document.getElementById('compose-to').value      = m.from || '';
+  document.getElementById('compose-cc').value      = '';
+  document.getElementById('compose-subject').value = m.subject.startsWith('Re:') ? m.subject : `Re: ${m.subject}`;
+  document.getElementById('compose-reply-uid').value = uid;
+  const date   = m.date ? new Date(m.date).toLocaleString('tr-TR') : '';
+  const quoted = (m.textBody || '').split('\n').map(l => `> ${l}`).join('\n');
+  document.getElementById('compose-body').value = `\n\n— ${date}, ${m.fromName || m.from} yazdı —\n${quoted}`;
   document.getElementById('compose-modal').classList.remove('hidden');
-  // Detay panelindeki from bilgisini al
-  const fromEl = document.querySelector('#mail-detail .mail-detail-from');
-  if (fromEl) {
-    const match = fromEl.textContent.match(/<(.+?)>/);
-    if (match) document.getElementById('compose-to').value = match[1];
-  }
+  setTimeout(() => {
+    const b = document.getElementById('compose-body');
+    b.focus(); b.setSelectionRange(0, 0);
+  }, 60);
 }
 
 function forwardMail(uid) {
+  const m = _activeMailData;
+  if (!m) return;
+  document.getElementById('compose-modal-title').textContent = 'İlet';
+  document.getElementById('compose-to').value      = '';
+  document.getElementById('compose-cc').value      = '';
+  document.getElementById('compose-subject').value = `Fwd: ${m.subject}`;
+  document.getElementById('compose-reply-uid').value = '';
+  const date = m.date ? new Date(m.date).toLocaleString('tr-TR') : '';
+  document.getElementById('compose-body').value =
+    `\n\n— İletilen mesaj —\nGönderen: ${m.fromName || m.from} <${m.from}>\nTarih: ${date}\nKonu: ${m.subject}\n\n${m.textBody || ''}`;
   document.getElementById('compose-modal').classList.remove('hidden');
 }
 
 function composeMail() {
-  document.getElementById('compose-to').value = '';
+  document.getElementById('compose-modal-title').textContent = 'Yeni Mail';
+  document.getElementById('compose-to').value      = '';
+  document.getElementById('compose-cc').value      = '';
   document.getElementById('compose-subject').value = '';
-  document.getElementById('compose-body').value = '';
+  document.getElementById('compose-body').value    = '';
+  document.getElementById('compose-reply-uid').value = '';
   document.getElementById('compose-modal').classList.remove('hidden');
 }
 
 async function sendMail() {
   const to      = document.getElementById('compose-to').value.trim();
+  const cc      = document.getElementById('compose-cc').value.trim();
   const subject = document.getElementById('compose-subject').value.trim();
   const body    = document.getElementById('compose-body').value.trim();
   if (!to)      { showToast('Alıcı girin.', 'error'); return; }
@@ -542,15 +663,12 @@ async function sendMail() {
     const res = await fetch('/api/mail/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to, subject, body })
+      body: JSON.stringify({ to, cc: cc || undefined, subject, body })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     showToast('Mail gönderildi!', 'success');
     closeModal('compose-modal');
-    document.getElementById('compose-to').value = '';
-    document.getElementById('compose-subject').value = '';
-    document.getElementById('compose-body').value = '';
   } catch (err) {
     showToast('Gönderilemedi: ' + err.message, 'error');
   } finally {
@@ -1161,7 +1279,7 @@ function setupSearch() {
   });
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter' && input.value.trim()) {
-      showToast(`"${input.value}" için arama sonuçları: henüz uygulanmadı.`, 'info');
+      runSearch(input.value.trim());
     }
   });
 }
@@ -1171,6 +1289,79 @@ function clearSearch() {
   input.value = '';
   document.getElementById('search-clear-btn').classList.add('hidden');
   input.focus();
+}
+
+async function runSearch(q) {
+  navigate('search');
+  const dispEl = document.getElementById('search-query-display');
+  if (dispEl) dispEl.textContent = q;
+  const c = document.getElementById('search-results-container');
+  c.innerHTML = '<div style="padding:40px;text-align:center;color:var(--apple-gray)"><div class="btn-spinner" style="margin:0 auto 14px;display:block"></div>Aranıyor…</div>';
+
+  const sections = [];
+
+  // Kişiler (yerel)
+  if (_contacts.length) {
+    const ql = q.toLowerCase();
+    const hits = _contacts.filter(con =>
+      con.name.toLowerCase().includes(ql) ||
+      (con.email || '').toLowerCase().includes(ql) ||
+      (con.phone || '').includes(ql)
+    );
+    if (hits.length) sections.push({ type: 'contacts', items: hits });
+  }
+
+  // Mail (sunucu)
+  try {
+    const res  = await fetch(`/api/mail/search?q=${encodeURIComponent(q)}&folder=${encodeURIComponent(mailFolder)}`);
+    const data = await res.json();
+    if (data.messages?.length) sections.push({ type: 'mail', items: data.messages });
+  } catch (_) {}
+
+  if (!sections.length) {
+    c.innerHTML = `
+      <div class="search-empty">
+        <div class="search-empty-icon">🔍</div>
+        <div class="search-empty-text">"${escHtml(q)}" için sonuç bulunamadı</div>
+        <div class="search-empty-sub">Mail, kişi veya takvim etkinliği aramanı dene</div>
+      </div>`;
+    return;
+  }
+
+  c.innerHTML = sections.map(sec => {
+    if (sec.type === 'mail') {
+      return `<div class="search-section">
+        <div class="search-section-title">Mail (${sec.items.length})</div>
+        ${sec.items.map(m => `
+          <div class="search-result-item" onclick="navigate('mail');setTimeout(()=>openMail(${m.uid}),150)">
+            <div class="search-result-icon" style="background:rgba(0,113,227,0.12);color:#0071e3;font-size:20px">✉️</div>
+            <div class="search-result-info">
+              <div class="search-result-title">${escHtml(m.subject)}</div>
+              <div class="search-result-sub">${escHtml(m.fromName || m.from)} · ${formatMailDate(m.date)}</div>
+            </div>
+            ${m.flagged ? '<span style="color:#ff9500;font-size:16px">⭐</span>' : ''}
+          </div>`).join('')}
+      </div>`;
+    }
+    if (sec.type === 'contacts') {
+      return `<div class="search-section">
+        <div class="search-section-title">Kişiler (${sec.items.length})</div>
+        ${sec.items.map(con => {
+          const initial = con.name[0]?.toUpperCase() || '?';
+          const color = MAIL_COLORS[(con.name.charCodeAt(0) || 0) % MAIL_COLORS.length];
+          return `
+          <div class="search-result-item" onclick="navigate('contacts')">
+            <div class="search-result-icon" style="background:${color};color:white;font-weight:700;font-size:16px">${escHtml(initial)}</div>
+            <div class="search-result-info">
+              <div class="search-result-title">${escHtml(con.name)}</div>
+              <div class="search-result-sub">${escHtml(con.phone || con.email || '')}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+    return '';
+  }).join('');
 }
 
 // ===== PANELS =====
