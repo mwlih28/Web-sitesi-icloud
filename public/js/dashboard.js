@@ -313,11 +313,17 @@ async function fetchMails(page) {
   }
 }
 
+function mailBack() {
+  document.getElementById('mail-container')?.classList.remove('detail-open');
+}
+
 async function openMail(uid) {
   activeMail = uid;
   document.querySelectorAll('.mail-item').forEach(el => el.classList.remove('active'));
   const item = document.getElementById(`mail-item-${uid}`);
   if (item) { item.classList.add('active'); item.classList.remove('unread'); item.querySelector('.unread-dot')?.remove(); }
+  // Mobilde Gmail gibi detayı tam ekran aç
+  document.getElementById('mail-container')?.classList.add('detail-open');
 
   const detail = document.getElementById('mail-detail');
   detail.innerHTML = '<div class="mail-empty"><div class="btn-spinner" style="width:24px;height:24px;border-width:2.5px;border-color:rgba(0,0,0,0.1);border-top-color:var(--apple-blue)"></div></div>';
@@ -333,11 +339,16 @@ async function openMail(uid) {
     const sColor = MAIL_COLORS[(sName.charCodeAt(0) || 0) % MAIL_COLORS.length];
 
     const body = m.htmlBody
-      ? `<iframe sandbox="allow-same-origin" class="mail-iframe" srcdoc="${escAttr(m.htmlBody)}" onload="this.style.height=this.contentDocument.body.scrollHeight+32+'px'"></iframe>`
+      ? `<div class="mail-iframe-wrap"><iframe sandbox="allow-same-origin" class="mail-iframe" srcdoc="${escAttr(m.htmlBody)}" onload="this.style.height=this.contentDocument.body.scrollHeight+32+'px'"></iframe></div>`
       : `<div class="mail-body-area" style="white-space:pre-wrap">${escHtml(m.textBody || '(İçerik yok)')}</div>`;
 
     detail.innerHTML = `
       <div class="mail-detail-toolbar">
+        <button class="mail-action-btn mail-back-btn" onclick="mailBack()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+          Geri
+        </button>
+        <div class="mail-toolbar-sep mail-back-btn" style="margin-left:0"></div>
         <button class="mail-action-btn" onclick="replyMail(${uid})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
           Yanıtla

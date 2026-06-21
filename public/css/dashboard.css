@@ -434,6 +434,9 @@
 .mail-action-btn.danger { color: #ff3b30; }
 .mail-action-btn.danger:hover { background: rgba(255,59,48,0.09); }
 .mail-toolbar-sep { width: 1px; height: 20px; background: rgba(0,0,0,0.1); margin: 0 4px; }
+.mail-back-btn { display: none; }
+.mail-iframe-wrap { overflow-x: auto; border-radius: 12px; width: 100%; }
+.mail-iframe-wrap .mail-iframe { min-width: 0; }
 
 .mail-detail-scroll {
   flex: 1; overflow-y: auto;
@@ -951,19 +954,55 @@
 
 /* ===== RESPONSIVE DASHBOARD ===== */
 @media (max-width: 1100px) {
-  .mail-layout { grid-template-columns: 1fr; height: auto; }
-  .mail-list { max-height: 340px; }
-  .mail-detail { min-height: 400px; }
   .cal-grid { grid-template-columns: 1fr; }
   .notes-layout { grid-template-columns: 1fr; }
+  /* Mail: tablet — üstte liste, altta detay */
+  .mail-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .mail-list {
+    max-height: 42vh;
+    border-right: none;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+  .mail-detail { min-height: 50vh; }
 }
 @media (max-width: 860px) {
   .sidebar { display: none; }
   .main-content { padding: 20px 16px; }
   .app-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
 }
+
+/* Mail: mobil — Gmail gibi bir seferde bir panel */
+@media (max-width: 720px) {
+  .mail-layout {
+    display: block;
+    height: auto;
+    overflow: hidden;
+  }
+  .mail-list {
+    max-height: none;
+    width: 100%;
+    display: block;
+  }
+  /* Detay varsayılan gizli */
+  .mail-detail {
+    display: none;
+  }
+  /* Mail açıldığında: listeyi gizle, detayı göster */
+  .mail-layout.detail-open .mail-list { display: none; }
+  .mail-layout.detail-open .mail-detail {
+    display: flex;
+    min-height: 75vh;
+  }
+  /* Geri butonu sadece mobilde görünür */
+  .mail-back-btn { display: flex !important; }
+}
+
 @media (max-width: 600px) {
   .icloud-header { padding: 0 12px; }
   .header-center { display: none; }
   .photo-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  .main-content { overflow-x: hidden; }
 }
