@@ -235,21 +235,21 @@ function buildMail() {
         <h3 id="mail-folder-title">Gelen Kutusu</h3>
         <span class="mail-count" id="mail-unread-count">yükleniyor…</span>
       </div>
-      <div id="mail-items" style="overflow-y:auto;max-height:calc(100vh - 220px)">
+      <div id="mail-items" style="overflow-y:auto;flex:1">
         <div style="padding:32px;text-align:center;color:var(--apple-gray)">
           <div class="btn-spinner" style="margin:0 auto 12px;display:block"></div>
           Mailler yükleniyor…
         </div>
       </div>
-      <div id="mail-pagination" style="padding:12px 16px;border-top:1px solid rgba(0,0,0,0.07);display:flex;gap:8px;justify-content:center"></div>
+      <div id="mail-pagination" style="padding:10px 14px;border-top:1px solid rgba(0,0,0,0.07);display:flex;gap:8px;justify-content:center;flex-shrink:0"></div>
     </div>
     <div class="mail-detail" id="mail-detail">
       <div class="mail-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
           <polyline points="22,6 12,13 2,6"/>
         </svg>
-        <span>Bir mail seçin</span>
+        <span>Bir mail seçerek okuyun</span>
       </div>
     </div>`;
   fetchMails();
@@ -281,14 +281,23 @@ async function fetchMails(page) {
       return;
     }
 
-    items.innerHTML = data.messages.map(m => `
+    const MAIL_COLORS = ['#0071e3','#ff3b30','#34c759','#ff9500','#5856d6','#ff2d55','#00c7be','#8e8e93'];
+    items.innerHTML = data.messages.map(m => {
+      const sName = m.fromName || m.from || '?';
+      const initials = sName.split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || '').join('') || '?';
+      const color = MAIL_COLORS[(sName.charCodeAt(0) || 0) % MAIL_COLORS.length];
+      return `
       <div class="mail-item ${m.seen ? '' : 'unread'}" id="mail-item-${m.uid}" onclick="openMail(${m.uid})">
-        <div class="mail-item-header">
-          <span class="mail-sender">${m.seen ? '' : '<span class="unread-dot"></span>'}${escHtml(m.fromName || m.from)}</span>
-          <span class="mail-time">${formatMailDate(m.date)}</span>
+        <div class="mail-item-av" style="background:${color}">${escHtml(initials)}</div>
+        <div class="mail-item-body">
+          <div class="mail-item-row1">
+            <span class="mail-sender">${m.seen ? '' : '<span class="unread-dot"></span>'}${escHtml(sName)}</span>
+            <span class="mail-time">${formatMailDate(m.date)}</span>
+          </div>
+          <div class="mail-subject">${escHtml(m.subject)}</div>
         </div>
-        <div class="mail-subject">${escHtml(m.subject)}</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
     // Sayfalama
     const pagination = document.getElementById('mail-pagination');
@@ -311,32 +320,66 @@ async function openMail(uid) {
   if (item) { item.classList.add('active'); item.classList.remove('unread'); item.querySelector('.unread-dot')?.remove(); }
 
   const detail = document.getElementById('mail-detail');
-  detail.innerHTML = '<div style="padding:40px;text-align:center;color:var(--apple-gray)"><div class="btn-spinner" style="margin:0 auto;display:block"></div></div>';
+  detail.innerHTML = '<div class="mail-empty"><div class="btn-spinner" style="width:24px;height:24px;border-width:2.5px;border-color:rgba(0,0,0,0.1);border-top-color:var(--apple-blue)"></div></div>';
 
   try {
     const res  = await fetch(`/api/mail/message/${uid}?folder=${encodeURIComponent(mailFolder)}`);
     const m    = await res.json();
     if (!res.ok) throw new Error(m.error || 'Yüklenemedi');
 
+    const MAIL_COLORS = ['#0071e3','#ff3b30','#34c759','#ff9500','#5856d6','#ff2d55','#00c7be','#8e8e93'];
+    const sName = m.fromName || m.from || '?';
+    const initials = sName.split(/\s+/).slice(0,2).map(w => w[0]?.toUpperCase() || '').join('') || '?';
+    const sColor = MAIL_COLORS[(sName.charCodeAt(0) || 0) % MAIL_COLORS.length];
+
     const body = m.htmlBody
-      ? `<iframe sandbox="allow-same-origin" style="width:100%;min-height:360px;border:none;margin-top:16px" srcdoc="${escAttr(m.htmlBody)}"></iframe>`
-      : `<div class="mail-detail-body" style="white-space:pre-wrap">${escHtml(m.textBody || '(İçerik yok)')}</div>`;
+      ? `<iframe sandbox="allow-same-origin" class="mail-iframe" srcdoc="${escAttr(m.htmlBody)}" onload="this.style.height=this.contentDocument.body.scrollHeight+32+'px'"></iframe>`
+      : `<div class="mail-body-area" style="white-space:pre-wrap">${escHtml(m.textBody || '(İçerik yok)')}</div>`;
 
     detail.innerHTML = `
-      <div class="mail-detail-from">${escHtml(m.fromName)} &lt;${escHtml(m.from)}&gt;</div>
-      <div style="font-size:0.8rem;color:var(--apple-gray);margin-bottom:4px">Kime: ${escHtml(m.to)}</div>
-      <div style="font-size:0.78rem;color:var(--apple-gray);margin-bottom:16px">${formatMailDate(m.date)}</div>
-      <div class="mail-detail-subject">${escHtml(m.subject)}</div>
-      ${body}
-      ${m.attachments?.length ? `<div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(0,0,0,0.08)">
-        📎 <strong>${m.attachments.length} ek:</strong>
-        ${m.attachments.map(a => `<span style="margin-left:8px;font-size:0.82rem;color:var(--apple-gray)">${escHtml(a.filename)} (${formatSize(a.size)})</span>`).join('')}
-      </div>` : ''}
-      <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
-        <button class="select-btn" onclick="replyMail(${uid})">↩ Yanıtla</button>
-        <button class="select-btn" onclick="forwardMail(${uid})">↗ İlet</button>
-        <button class="select-btn" onclick="toggleFlag(${uid})">⭐ Yıldızla</button>
-        <button class="select-btn" style="color:#ff3b30" onclick="deleteMail(${uid})">🗑 Sil</button>
+      <div class="mail-detail-toolbar">
+        <button class="mail-action-btn" onclick="replyMail(${uid})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+          Yanıtla
+        </button>
+        <button class="mail-action-btn" onclick="forwardMail(${uid})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg>
+          İlet
+        </button>
+        <div class="mail-toolbar-sep"></div>
+        <button class="mail-action-btn" onclick="toggleFlag(${uid})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Yıldızla
+        </button>
+        <div style="flex:1"></div>
+        <button class="mail-action-btn danger" onclick="deleteMail(${uid})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Sil
+        </button>
+      </div>
+      <div class="mail-detail-scroll">
+        <div class="mail-detail-subject">${escHtml(m.subject)}</div>
+        <div class="mail-sender-card">
+          <div class="mail-sender-av" style="background:${sColor}">${escHtml(initials)}</div>
+          <div class="mail-sender-info">
+            <div class="mail-sender-name">${escHtml(m.fromName || m.from)}</div>
+            <div class="mail-sender-email">${escHtml(m.from)}</div>
+            <div class="mail-sender-to">
+              Kime: ${escHtml(m.to)}${m.cc ? `<br>CC: ${escHtml(m.cc)}` : ''}
+            </div>
+          </div>
+          <div class="mail-sender-date">${formatMailDate(m.date)}</div>
+        </div>
+        ${body}
+        ${m.attachments?.length ? `
+        <div class="mail-attach-wrap">
+          <div class="mail-attach-title">📎 ${m.attachments.length} ek dosya</div>
+          ${m.attachments.map(a => `
+            <span class="mail-attach-chip">
+              📄 <span>${escHtml(a.filename)}</span>
+              <span class="mail-attach-size">${formatSize(a.size)}</span>
+            </span>`).join('')}
+        </div>` : ''}
       </div>`;
   } catch (err) {
     detail.innerHTML = `<div style="padding:24px;color:#ff3b30">${escHtml(err.message)}</div>`;
