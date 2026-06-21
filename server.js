@@ -1,30 +1,25 @@
 'use strict';
 
-const express    = require('express');
-const session    = require('express-session');
+const express      = require('express');
+const cookieSession = require('cookie-session');
 const { ImapFlow } = require('imapflow');
 const { simpleParser } = require('mailparser');
-const nodemailer = require('nodemailer');
-const path       = require('path');
+const nodemailer   = require('nodemailer');
+const path         = require('path');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-app.set('trust proxy', 1); // Nginx arkasında çalışmak için şart
-
 // ===== MIDDLEWARE =====
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'icloud-web-secret-degistir-bunu',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false,
-    httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 8 * 60 * 60 * 1000  // 8 saat
-  }
+app.use(cookieSession({
+  name: 'icloud_sess',
+  keys: [process.env.SESSION_SECRET || 'icloud-web-secret-degistir-bunu'],
+  maxAge: 8 * 60 * 60 * 1000,  // 8 saat
+  secure: false,
+  httpOnly: true,
+  sameSite: 'lax'
 }));
 
 // ===== HELPERS =====
