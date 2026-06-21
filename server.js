@@ -303,6 +303,74 @@ app.post('/api/mail/send', requireAuth, async (req, res) => {
   }
 });
 
+// ===== CALDAV – ANIMSATICIlar (VTODO) =====
+
+function parseICalTodos(icsStr) {
+  if (!icsStr) return [];
+  const todos = [];
+  const re = /BEGIN:VTODO\r?\n([\s\S]*?)\r?\nEND:VTODO/g;
+  let m;
+  while ((m = re.exec(icsStr)) !== null) {
+    const block = m[1];
+    const get = (key) => {
+      const rx = new RegExp(`(?:^|\\r?\\n)${key}(?:;[^:\\n]*)?:(.+)`, 'i');
+      const r = rx.exec(block);
+      return r ? r[1].replace(/\\n/g, ' ').trim() : '';
+    };
+    const summary = get('SUMMARY');
+    if (!summary) continue;
+    const parseDate = (ds) => {
+      if (!ds) return null;
+      const s = ds.replace(/Z$/, '').replace(/T\d{6}.*$/, '');
+      const pm = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+      return pm ? new Date(+pm[1], +pm[2] - 1, +pm[3]) : null;
+    };
+    const prio = get('PRIORITY');
+    todos.push({
+      uid:      get('UID'),
+      title:    summary,
+      done:     get('STATUS') === 'COMPLETED',
+      due:      parseDate(get('DUE'))?.toISOString() || null,
+      priority: prio === '1' ? 'high' : prio === '5' ? 'medium' : 'low',
+    });
+  }
+  return todos;
+}
+
+// GET /api/reminders
+app.get('/api/reminders', requireAuth, async (req, res) => {
+  const { email, password } = req.session.user;
+  try {
+    const client = await createDAVClient({
+      serverUrl: 'https://caldav.icloud.com',
+      credentials: { username: email, password },
+      authMethod: 'Basic',
+      defaultAccountType: 'caldav',
+    });
+    const calendars = await client.fetchCalendars();
+    const allTodos = [];
+
+    for (const cal of calendars) {
+      try {
+        const objects = await client.fetchCalendarObjects({ calendar: cal });
+        for (const obj of objects) {
+          if (obj.data && obj.data.includes('BEGIN:VTODO')) {
+            parseICalTodos(obj.data).forEach(t =>
+              allTodos.push({ ...t, listName: cal.displayName || 'Anımsatıcılar' })
+            );
+          }
+        }
+      } catch (_) { /* hatalı takvimi atla */ }
+    }
+
+    allTodos.sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0));
+    res.json({ reminders: allTodos });
+  } catch (err) {
+    console.error('[Reminders]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ===== CARDDAV – KİŞİLER =====
 
 function parseVCard(str) {

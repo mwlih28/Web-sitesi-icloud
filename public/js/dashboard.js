@@ -79,14 +79,14 @@ const pageTitles = {
 
 // ===== HOME =====
 const HOME_APPS = [
-  { page:'photos',   icon:'📷', bg:'linear-gradient(135deg,#ff9f0a,#ff6b35)', name:'Fotoğraflar',  sub:'2.847 öğe' },
-  { page:'drive',    icon:'☁️', bg:'linear-gradient(135deg,#0071e3,#5ac8fa)', name:'iCloud Drive', sub:'19,7 GB' },
-  { page:'mail',     icon:'✉️', bg:'linear-gradient(135deg,#0071e3,#00c7be)', name:'Mail',         sub:'12 okunmamış' },
-  { page:'calendar', icon:'📅', bg:'linear-gradient(135deg,#ff3b30,#ff6961)', name:'Takvim',       sub:'2 etkinlik' },
-  { page:'contacts', icon:'👥', bg:'linear-gradient(135deg,#636366,#aeaeb2)', name:'Kişiler',      sub:'284 kişi' },
-  { page:'notes',    icon:'📝', bg:'linear-gradient(135deg,#ffcc00,#ff9500)', name:'Notlar',       sub:'5 not' },
-  { page:'reminders',icon:'⏰', bg:'linear-gradient(135deg,#ff9500,#ffcc00)', name:'Anımsatıcılar',sub:'4 bekliyor' },
-  { page:'find',     icon:'📍', bg:'linear-gradient(135deg,#34c759,#00c7be)', name:'Bul',          sub:'3 cihaz' },
+  { page:'photos',    icon:'📷', bg:'linear-gradient(135deg,#ff9f0a,#ff6b35)', name:'Fotoğraflar',   subId:'home-sub-photos'    },
+  { page:'drive',     icon:'☁️', bg:'linear-gradient(135deg,#0071e3,#5ac8fa)', name:'iCloud Drive',  subId:'home-sub-drive'     },
+  { page:'mail',      icon:'✉️', bg:'linear-gradient(135deg,#0071e3,#00c7be)', name:'Mail',          subId:'home-sub-mail'      },
+  { page:'calendar',  icon:'📅', bg:'linear-gradient(135deg,#ff3b30,#ff6961)', name:'Takvim',        subId:'home-sub-calendar'  },
+  { page:'contacts',  icon:'👥', bg:'linear-gradient(135deg,#636366,#aeaeb2)', name:'Kişiler',       subId:'home-sub-contacts'  },
+  { page:'notes',     icon:'📝', bg:'linear-gradient(135deg,#ffcc00,#ff9500)', name:'Notlar',        subId:'home-sub-notes'     },
+  { page:'reminders', icon:'⏰', bg:'linear-gradient(135deg,#ff9500,#ffcc00)', name:'Anımsatıcılar', subId:'home-sub-reminders' },
+  { page:'find',      icon:'📍', bg:'linear-gradient(135deg,#34c759,#00c7be)', name:'Bul',           subId:null                 },
 ];
 
 function buildHomeApps() {
@@ -95,30 +95,33 @@ function buildHomeApps() {
     <div class="app-tile" onclick="navigate('${app.page}')">
       <div class="app-tile-icon" style="background:${app.bg}">${app.icon}</div>
       <div class="app-tile-name">${app.name}</div>
-      <div class="app-tile-sub">${app.sub}</div>
+      <div class="app-tile-sub" id="${app.subId || ''}"></div>
     </div>
   `).join('');
 }
 
+function setHomeSub(id, text) {
+  const el = id && document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
 function buildHomeRecents() {
+  // Gerçek son mailleri göstereceğiz — veri yüklendikten sonra updateHomeRecents() çağrılır
+  document.getElementById('home-recents').innerHTML =
+    '<div style="color:var(--apple-gray);font-size:0.85rem;padding:12px 0">Mailler yüklendikten sonra burada görünecek.</div>';
+}
+
+function updateHomeRecents(messages) {
   const list = document.getElementById('home-recents');
-  const recents = [
-    { icon:'📷', bg:'#ff9f0a', name:'IMG_0001.jpg',        meta:'Fotoğraflar • Bugün, 14:32', size:'3.2 MB', page:'photos' },
-    { icon:'📝', bg:'#ffcc00', name:'Proje Fikirleri',      meta:'Notlar • Bugün, 14:00',       size:'',       page:'notes'  },
-    { icon:'📄', bg:'#ff3b30', name:'CV_2026.pdf',          meta:'iCloud Drive • Dün',          size:'1.2 MB', page:'drive'  },
-    { icon:'✉️', bg:'#0071e3', name:'Proje Toplantısı',     meta:'Mail • Ahmet Yılmaz',         size:'',       page:'mail'   },
-    { icon:'📊', bg:'#34c759', name:'Bütçe_2026.xlsx',      meta:'iCloud Drive • 15 Haz',       size:'2.3 MB', page:'drive'  },
-  ];
-  list.innerHTML = recents.map(r => `
-    <div class="recent-item" onclick="navigate('${r.page}')">
-      <div class="recent-icon" style="background:${r.bg}20;color:${r.bg};font-size:22px">${r.icon}</div>
+  if (!list || !messages.length) return;
+  list.innerHTML = messages.slice(0, 5).map(m => `
+    <div class="recent-item" onclick="navigate('mail')">
+      <div class="recent-icon" style="background:#0071e320;color:#0071e3;font-size:22px">✉️</div>
       <div class="recent-info">
-        <div class="recent-name">${r.name}</div>
-        <div class="recent-meta">${r.meta}</div>
+        <div class="recent-name">${escHtml(m.subject)}</div>
+        <div class="recent-meta">Mail • ${escHtml(m.fromName || m.from)} • ${formatMailDate(m.date)}</div>
       </div>
-      <div class="recent-size">${r.size}</div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 // ===== PHOTOS =====
@@ -208,79 +211,16 @@ document.addEventListener('keydown', e => {
 
 // ===== DRIVE =====
 function buildDrive() {
-  renderDriveList(DRIVE_FILES);
+  document.getElementById('drive-container').innerHTML = unavailablePage(
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.71 3.41 2 2 0 0 1 3.68 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.92-1.02a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+    'iCloud Drive bu uygulamada görüntülenemiyor',
+    'iCloud Drive dosyalarınıza erişmek için standart bir protokol (WebDAV gibi) Apple tarafından uygulama şifresiyle desteklenmiyor.',
+    'https://www.icloud.com/iclouddrive/'
+  );
 }
-
-function renderDriveList(files) {
-  const c = document.getElementById('drive-container');
-  if (driveView === 'list') {
-    c.innerHTML = `
-      <div class="drive-file-list">
-        <div class="drive-file-header">
-          <span>Ad</span><span>Değiştirme Tarihi</span><span>Boyut</span><span>Tür</span>
-        </div>
-        ${files.map(f => `
-          <div class="drive-file-row" onclick="driveClick(${f.id})">
-            <div class="drive-file-name-cell">
-              <span class="drive-file-icon-sm">${FILE_ICONS[f.type] || FILE_ICONS.default}</span>
-              <span class="drive-file-name-text">${f.name}</span>
-            </div>
-            <span class="drive-file-meta">${f.modified}</span>
-            <span class="drive-file-meta">${f.size}</span>
-            <span class="drive-file-meta">${f.type === 'folder' ? `${f.items} öğe` : f.type.toUpperCase()}</span>
-          </div>
-        `).join('')}
-      </div>`;
-  } else {
-    c.innerHTML = `
-      <div class="app-grid">
-        ${files.map(f => `
-          <div class="app-tile" onclick="driveClick(${f.id})">
-            <div class="app-tile-icon" style="background:rgba(0,113,227,0.1);font-size:32px">${FILE_ICONS[f.type] || FILE_ICONS.default}</div>
-            <div class="app-tile-name" style="font-size:0.82rem">${f.name}</div>
-            <div class="app-tile-sub">${f.size !== '—' ? f.size : f.items + ' öğe'}</div>
-          </div>
-        `).join('')}
-      </div>`;
-  }
-}
-
-function setDriveView(v) {
-  driveView = v;
-  document.getElementById('list-btn').classList.toggle('active', v === 'list');
-  document.getElementById('grid-btn').classList.toggle('active', v === 'grid');
-  renderDriveList(DRIVE_FILES);
-}
-
-function driveClick(id) {
-  const file = DRIVE_FILES.find(f => f.id === id);
-  if (!file) return;
-  if (file.type === 'folder') {
-    showToast(`"${file.name}" klasörü açılıyor…`, 'info');
-    updateDrivePath(file.name);
-  } else {
-    showToast(`"${file.name}" indiriliyor…`, 'success');
-  }
-}
-
-function updateDrivePath(folder) {
-  const path = document.getElementById('drive-path');
-  path.innerHTML = `
-    <span class="drive-path-item" onclick="navigateDrive(null)">iCloud Drive</span>
-    <span class="drive-path-sep">›</span>
-    <span class="drive-path-current">${folder}</span>`;
-}
-
-function navigateDrive(folder) {
-  const path = document.getElementById('drive-path');
-  path.innerHTML = `<span class="drive-path-item" onclick="navigateDrive(null)">iCloud Drive</span>`;
-  renderDriveList(DRIVE_FILES);
-}
-
-function createFolder() {
-  const name = prompt('Klasör adı:');
-  if (name) showToast(`"${name}" klasörü oluşturuldu.`, 'success');
-}
+function setDriveView() {}
+function navigateDrive() {}
+function createFolder() {}
 
 // ===== MAIL (GERÇEK iCLOUD IMAP) =====
 let mailFolder = 'INBOX';
@@ -329,6 +269,12 @@ async function fetchMails(page) {
     mailTotal = data.total;
     const count = document.getElementById('mail-unread-count');
     if (count) count.textContent = data.unseen ? `${data.unseen} okunmamış` : '';
+
+    // Sidebar + home stats güncelle
+    const badge = document.getElementById('sidebar-mail-badge');
+    if (badge) badge.innerHTML = data.unseen ? `<span class="badge">${data.unseen}</span>` : '';
+    setHomeSub('home-sub-mail', data.unseen ? `${data.unseen} okunmamış` : `${data.total} mail`);
+    updateHomeRecents(data.messages || []);
 
     if (!data.messages.length) {
       items.innerHTML = '<div style="padding:32px;text-align:center;color:var(--apple-gray)">Bu klasörde mail yok.</div>';
@@ -546,6 +492,10 @@ async function buildCalendar() {
       startDate: e.start ? new Date(e.start) : null
     }));
     renderCalendar();
+    // Home stats güncelle
+    const now = new Date();
+    const upcoming = _calEvents.filter(e => e.startDate && e.startDate >= now).length;
+    setHomeSub('home-sub-calendar', upcoming ? `${upcoming} etkinlik` : 'Takvim');
   } catch (err) {
     const up = document.getElementById('upcoming-events');
     if (up) up.innerHTML = `<p style="color:#ff3b30;font-size:0.82rem">${escHtml(err.message)}</p>`;
@@ -630,22 +580,36 @@ function changeMonth(dir) {
   renderCalendar();
 }
 
-// ===== NOTES =====
+// ===== NOTES (Yalnızca tarayıcıda — iCloud sync yok) =====
+let _localNotes = JSON.parse(localStorage.getItem('icloud_web_notes') || '[]');
+
+function saveLocalNotes() {
+  localStorage.setItem('icloud_web_notes', JSON.stringify(_localNotes));
+}
+
 function buildNotes() {
   const c = document.getElementById('notes-container');
   c.innerHTML = `
+    <div class="local-notes-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Bu notlar yalnızca bu tarayıcıda saklanır — iCloud ile senkronize edilmez.
+    </div>
     <div class="notes-layout">
       <div class="notes-list">
         <div class="notes-list-header">
           <h3>Notlar</h3>
           <button class="select-btn" onclick="newNote()" style="padding:5px 12px;font-size:0.8rem">+ Yeni</button>
         </div>
-        ${NOTES_DATA.map(n => `
-          <div class="note-item" id="note-item-${n.id}" onclick="openNote(${n.id})">
-            <div class="note-title-text">${n.title}</div>
-            <div class="note-preview">${n.body.split('\n')[0]}</div>
-            <div class="note-date">${n.date}</div>
-          </div>`).join('')}
+        <div id="notes-list-items">
+          ${_localNotes.length === 0
+            ? `<div style="padding:20px 16px;color:var(--apple-gray);font-size:0.85rem">Henüz not yok. "Yeni" ile başlayın.</div>`
+            : _localNotes.map(n => `
+            <div class="note-item" id="note-item-${n.id}" onclick="openNote(${n.id})">
+              <div class="note-title-text">${escHtml(n.title)}</div>
+              <div class="note-preview">${escHtml(n.body.split('\n')[0])}</div>
+              <div class="note-date">${n.date}</div>
+            </div>`).join('')}
+        </div>
       </div>
       <div class="note-editor" id="note-editor">
         <input class="note-editor-title" id="note-title-input" placeholder="Başlık" />
@@ -656,12 +620,13 @@ function buildNotes() {
         </div>
       </div>
     </div>`;
-  openNote(NOTES_DATA[0].id);
+  if (_localNotes.length) openNote(_localNotes[0].id);
+  setHomeSub('home-sub-notes', `${_localNotes.length} not`);
 }
 
 function openNote(id) {
   activeNote = id;
-  const n = NOTES_DATA.find(x => x.id === id);
+  const n = _localNotes.find(x => x.id === id);
   if (!n) return;
   document.querySelectorAll('.note-item').forEach(el => el.classList.remove('active'));
   document.getElementById(`note-item-${id}`)?.classList.add('active');
@@ -670,10 +635,10 @@ function openNote(id) {
 }
 
 function saveNote() {
-  const title = document.getElementById('note-title-input').value;
+  const title = document.getElementById('note-title-input').value || 'Başlıksız';
   const body  = document.getElementById('note-body-input').value;
   if (activeNote) {
-    const n = NOTES_DATA.find(x => x.id === activeNote);
+    const n = _localNotes.find(x => x.id === activeNote);
     if (n) { n.title = title; n.body = body; n.date = 'Az önce'; }
     const item = document.getElementById(`note-item-${activeNote}`);
     if (item) {
@@ -681,6 +646,7 @@ function saveNote() {
       item.querySelector('.note-preview').textContent = body.split('\n')[0];
       item.querySelector('.note-date').textContent = 'Az önce';
     }
+    saveLocalNotes();
   }
   showToast('Not kaydedildi.', 'success');
 }
@@ -688,63 +654,102 @@ function saveNote() {
 function deleteNote() {
   if (!activeNote) return;
   if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;
-  const idx = NOTES_DATA.findIndex(x => x.id === activeNote);
-  if (idx > -1) NOTES_DATA.splice(idx, 1);
+  _localNotes = _localNotes.filter(x => x.id !== activeNote);
+  saveLocalNotes();
   document.getElementById(`note-item-${activeNote}`)?.remove();
   activeNote = null;
   document.getElementById('note-title-input').value = '';
   document.getElementById('note-body-input').value = '';
-  showToast('Not silindi.', 'error');
+  showToast('Not silindi.', 'info');
 }
 
 function newNote() {
   const id = Date.now();
-  NOTES_DATA.unshift({ id, title:'Yeni Not', body:'', date:'Az önce' });
-  const list = document.querySelector('.notes-list');
-  const header = list.querySelector('.notes-list-header');
-  const div = document.createElement('div');
-  div.className = 'note-item'; div.id = `note-item-${id}`;
-  div.onclick = () => openNote(id);
-  div.innerHTML = `<div class="note-title-text">Yeni Not</div><div class="note-preview"></div><div class="note-date">Az önce</div>`;
-  header.insertAdjacentElement('afterend', div);
+  const note = { id, title: 'Yeni Not', body: '', date: 'Az önce' };
+  _localNotes.unshift(note);
+  saveLocalNotes();
+  const container = document.getElementById('notes-list-items');
+  if (container) {
+    const existing = container.querySelector('[style*="Henüz"]');
+    if (existing) existing.remove();
+    const div = document.createElement('div');
+    div.className = 'note-item'; div.id = `note-item-${id}`;
+    div.onclick = () => openNote(id);
+    div.innerHTML = `<div class="note-title-text">Yeni Not</div><div class="note-preview"></div><div class="note-date">Az önce</div>`;
+    container.prepend(div);
+  }
   openNote(id);
+  setHomeSub('home-sub-notes', `${_localNotes.length} not`);
 }
 
-// ===== REMINDERS =====
-function buildReminders() {
-  renderReminders();
+// ===== REMINDERS (GERÇEK CalDAV VTODO) =====
+let _reminders = [];
+
+async function buildReminders() {
+  const c = document.getElementById('reminders-container');
+  c.innerHTML = `<div style="padding:32px;text-align:center;color:var(--apple-gray)">
+    <div class="btn-spinner" style="margin:0 auto 14px;display:block;width:22px;height:22px;border-width:2.5px;border-color:rgba(0,0,0,0.12);border-top-color:var(--apple-blue)"></div>
+    iCloud anımsatıcıları yükleniyor…</div>`;
+
+  try {
+    const res  = await fetch('/api/reminders');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Anımsatıcılar yüklenemedi');
+    _reminders = data.reminders;
+    renderReminders();
+    const pending = _reminders.filter(r => !r.done).length;
+    const sb = document.getElementById('sidebar-reminders-count');
+    if (sb) sb.textContent = pending || '';
+    setHomeSub('home-sub-reminders', pending ? `${pending} bekliyor` : 'Hepsi tamam');
+  } catch (err) {
+    c.innerHTML = `<div style="padding:28px;color:#ff3b30;text-align:center">${escHtml(err.message)}</div>`;
+  }
 }
 
 function renderReminders() {
   const c = document.getElementById('reminders-container');
+  if (!c) return;
   const priorityColor = { high:'#ff3b30', medium:'#ff9500', low:'#34c759' };
+
+  const pending   = _reminders.filter(r => !r.done);
+  const completed = _reminders.filter(r => r.done);
+
+  const rows = (items) => items.map((r, i) => {
+    const due = r.due ? new Date(r.due) : null;
+    const dueStr = due ? due.toLocaleDateString('tr-TR', { day:'numeric', month:'short' }) : '';
+    return `
+      <div class="reminder-row" id="rem-${escHtml(r.uid || String(i))}">
+        <span class="reminder-check" onclick="toggleReminderLocal('${escHtml(r.uid || String(i))}')">${r.done ? '✅' : '⭕'}</span>
+        <div class="reminder-info">
+          <div class="reminder-title ${r.done ? 'done' : ''}">${escHtml(r.title)}</div>
+          <div class="reminder-meta">${r.listName ? escHtml(r.listName) : ''}${dueStr ? ` · ${dueStr}` : ''}</div>
+        </div>
+        ${r.priority !== 'low'
+          ? `<span class="reminder-priority" style="color:${priorityColor[r.priority]||'#ff9500'}">${r.priority === 'high' ? '!!!' : '!!'}</span>`
+          : ''}
+      </div>`;
+  }).join('');
+
   c.innerHTML = `
-    <div class="drive-file-list">
-      ${REMINDERS.map(r => `
-        <div class="drive-file-row" style="grid-template-columns:40px 1fr 120px 80px">
-          <span onclick="toggleReminder(${r.id})" style="cursor:pointer;font-size:20px">${r.done ? '✅' : '⭕'}</span>
-          <div>
-            <div style="font-weight:600;text-decoration:${r.done ? 'line-through' : 'none'};color:${r.done ? 'var(--apple-gray)' : 'inherit'}">${r.title}</div>
-            <div class="drive-file-meta">${r.list}</div>
-          </div>
-          <span class="drive-file-meta">${r.due}</span>
-          <span style="font-size:0.78rem;font-weight:600;color:${priorityColor[r.priority]}">${r.priority.toUpperCase()}</span>
-        </div>`).join('')}
+    <div class="reminders-list">
+      ${pending.length === 0 && completed.length === 0
+        ? `<div style="padding:40px;text-align:center;color:var(--apple-gray)">Anımsatıcı yok.</div>`
+        : ''}
+      ${pending.length   ? `<div class="reminders-section-title">Bekliyor (${pending.length})</div>${rows(pending)}` : ''}
+      ${completed.length ? `<div class="reminders-section-title" style="margin-top:16px">Tamamlandı (${completed.length})</div>${rows(completed)}` : ''}
     </div>`;
 }
 
-function toggleReminder(id) {
-  const r = REMINDERS.find(x => x.id === id);
-  if (r) { r.done = !r.done; renderReminders(); showToast(r.done ? 'Tamamlandı!' : 'Geri alındı.', r.done ? 'success' : 'info'); }
+function toggleReminderLocal(uid) {
+  const r = _reminders.find(x => (x.uid || '') === uid);
+  if (!r) return;
+  r.done = !r.done;
+  renderReminders();
+  showToast(r.done ? 'Tamamlandı!' : 'Geri alındı.', r.done ? 'success' : 'info');
 }
 
 function addReminder() {
-  const title = prompt('Anımsatıcı başlığı:');
-  if (!title) return;
-  const id = Date.now();
-  REMINDERS.unshift({ id, title, due:'Bugün', done:false, priority:'medium', list:'Kişisel' });
-  renderReminders();
-  showToast('Anımsatıcı eklendi.', 'success');
+  showToast('Anımsatıcı eklemek için iCloud.com\'u kullanın.', 'info');
 }
 
 // ===== CONTACTS (GERÇEK CardDAV) =====
@@ -770,6 +775,11 @@ async function buildContacts() {
     if (!res.ok) throw new Error(data.error || 'Kişiler yüklenemedi');
     _contacts = data.contacts;
     renderContacts('');
+    // Sidebar + home stats güncelle
+    const n = _contacts.length;
+    const sb = document.getElementById('sidebar-contacts-count');
+    if (sb) sb.textContent = n;
+    setHomeSub('home-sub-contacts', `${n} kişi`);
   } catch (err) {
     document.getElementById('contacts-body').innerHTML =
       `<div style="padding:28px;color:#ff3b30;text-align:center">${escHtml(err.message)}</div>`;
@@ -840,130 +850,81 @@ function composeTo(email) {
 
 // ===== FIND MY =====
 function buildFindMy() {
-  const c = document.getElementById('find-container');
-  c.innerHTML = `
-    <div class="find-map">
-      <div class="map-grid-h" style="top:30%"></div>
-      <div class="map-grid-h" style="top:60%"></div>
-      <div class="map-grid-v" style="left:25%"></div>
-      <div class="map-grid-v" style="left:50%"></div>
-      <div class="map-grid-v" style="left:75%"></div>
-      <div class="map-pin" style="left:55%;top:45%">
-        <div class="map-pin-dot" style="background:linear-gradient(135deg,#0071e3,#5ac8fa)"></div>
-        <div class="map-pin-label">iPhone 15 Pro</div>
-      </div>
-      <div class="map-pin" style="left:52%;top:43%">
-        <div class="map-pin-dot" style="background:linear-gradient(135deg,#636366,#aeaeb2)"></div>
-        <div class="map-pin-label">MacBook Pro</div>
-      </div>
-      <div class="map-pin" style="left:30%;top:55%">
-        <div class="map-pin-dot" style="background:linear-gradient(135deg,#ff9500,#ffcc00)"></div>
-        <div class="map-pin-label">Apple Watch</div>
-      </div>
-      <div style="position:absolute;bottom:12px;right:12px;background:white;border-radius:8px;padding:8px 12px;font-size:0.8rem;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.15)">
-        📍 İstanbul, Türkiye
-      </div>
-    </div>
-    <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:14px">Cihazlarım</h3>
-    <div class="devices-list">
-      ${DEVICES.map(d => `
-        <div class="device-card">
-          <div class="device-icon">${d.icon}</div>
-          <div class="device-name">${d.name}</div>
-          <div class="device-location">📍 ${d.location}</div>
-          ${d.battery !== '—' ? `<div class="drive-file-meta">🔋 ${d.battery}</div>` : ''}
-          <span class="device-status ${d.status}">${d.status === 'online' ? 'Çevrimiçi' : 'Çevrimdışı'}</span>
-          <div style="display:flex;gap:6px;margin-top:4px">
-            <button class="select-btn" onclick="showToast('Ses çalındı.','success')" style="flex:1;padding:6px 0;font-size:0.75rem">🔔 Ses</button>
-            <button class="select-btn" onclick="showToast('Kayıp modu açıldı.','info')" style="flex:1;padding:6px 0;font-size:0.75rem">🔒 Kayıp</button>
-          </div>
-        </div>`).join('')}
-    </div>`;
+  document.getElementById('find-container').innerHTML = unavailablePage(
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+    '"Bul" bu uygulamada görüntülenemiyor',
+    'Apple, "iPhone\'umu Bul" ve cihaz konumu için herhangi bir açık protokol veya API sunmuyor. Bu özelliğe yalnızca iCloud.com veya Apple cihazlarından erişilebilir.',
+    'https://www.icloud.com/find/'
+  );
 }
 
 // ===== STORAGE =====
 function buildStorage() {
-  const c = document.getElementById('storage-container');
-  c.innerHTML = `
-    <div class="storage-overview">
-      <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:20px">iCloud Depolama</h3>
-      <div class="storage-donut-row">
-        <div class="storage-donut">
-          <svg viewBox="0 0 120 120" width="120" height="120">
-            <circle cx="60" cy="60" r="50" fill="none" stroke="#e0e0e0" stroke-width="14"/>
-            <circle cx="60" cy="60" r="50" fill="none" stroke="#0071e3" stroke-width="14"
-              stroke-dasharray="${2*Math.PI*50*0.38} ${2*Math.PI*50*0.62}" stroke-linecap="round"/>
-            <circle cx="60" cy="60" r="50" fill="none" stroke="#ff9500" stroke-width="14"
-              stroke-dasharray="${2*Math.PI*50*0.15} ${2*Math.PI*50*0.85}"
-              stroke-dashoffset="${-2*Math.PI*50*0.38}" stroke-linecap="round"/>
-            <circle cx="60" cy="60" r="50" fill="none" stroke="#ff3b30" stroke-width="14"
-              stroke-dasharray="${2*Math.PI*50*0.08} ${2*Math.PI*50*0.92}"
-              stroke-dashoffset="${-2*Math.PI*50*0.53}" stroke-linecap="round"/>
-          </svg>
-          <div class="storage-donut-label">19.7<div class="storage-donut-sub">GB / 50 GB</div></div>
-        </div>
-        <div class="storage-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:#0071e3"></div><span class="legend-label">Fotoğraflar</span><span class="legend-size">12.4 GB</span></div>
-          <div class="legend-item"><div class="legend-dot" style="background:#ff9500"></div><span class="legend-label">Yedeklemeler</span><span class="legend-size">4.8 GB</span></div>
-          <div class="legend-item"><div class="legend-dot" style="background:#ff3b30"></div><span class="legend-label">iCloud Drive</span><span class="legend-size">2.5 GB</span></div>
-          <div class="legend-item"><div class="legend-dot" style="background:#e0e0e0"></div><span class="legend-label">Boş</span><span class="legend-size">30.3 GB</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="upgrade-banner">
-      <div>
-        <h3>Daha Fazla Depolama Alanı mı Gerekiyor?</h3>
-        <p>50 GB'dan 200 GB'a yükseltin — yalnızca ₺39,99/ay</p>
-      </div>
-      <button class="btn" onclick="showToast('Apple One abonelik sayfasına yönlendiriliyorsunuz...','info')">Planı Yükselt</button>
+  document.getElementById('storage-container').innerHTML = unavailablePage(
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>',
+    'Depolama bilgisi bu uygulamada görüntülenemiyor',
+    'iCloud depolama kullanımına erişmek için Apple, yalnızca kendi uygulamalarına açık bir API kullanmaktadır. Üçüncü taraf uygulamalar bu bilgiye erişemez.',
+    'https://www.icloud.com/settings/'
+  );
+}
+
+// ===== UNAVAILABLE PAGE HELPER =====
+function unavailablePage(svgIcon, title, text, link) {
+  return `
+    <div class="page-unavailable">
+      <div class="page-unavail-icon">${svgIcon}</div>
+      <h3 class="page-unavail-title">${title}</h3>
+      <p class="page-unavail-text">${text}</p>
+      ${link ? `<a href="${link}" target="_blank" rel="noopener" class="btn-primary" style="max-width:220px;text-decoration:none;margin-top:8px">
+        iCloud.com'da Aç
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </a>` : ''}
     </div>`;
 }
 
 // ===== SETTINGS =====
 function buildSettings() {
-  const raw = sessionStorage.getItem('icloud_user');
-  const user = raw ? JSON.parse(raw) : { name:'Kullanıcı', email:'kullanici@icloud.com' };
   const c = document.getElementById('settings-container');
   c.innerHTML = `
-    <div style="max-width:600px;display:flex;flex-direction:column;gap:16px">
+    <div style="max-width:520px;display:flex;flex-direction:column;gap:16px">
       <div class="glass-card" style="padding:24px">
-        <h3 style="font-size:1rem;font-weight:700;margin-bottom:16px">Kişisel Bilgiler</h3>
-        <div class="input-group"><input type="text" value="${user.name || ''}" placeholder="Ad Soyad" id="settings-name" /></div>
-        <div class="input-group"><input type="email" value="${user.email || ''}" placeholder="E-posta" id="settings-email" readonly style="opacity:0.6;cursor:not-allowed" /></div>
-        <div class="input-group"><input type="tel" placeholder="+90 5XX XXX XX XX" id="settings-phone" /></div>
-        <button class="btn-primary" onclick="saveSettings()">Kaydet</button>
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:4px">Hesap Bilgileri</h3>
+        <p style="font-size:0.82rem;color:var(--apple-gray);margin-bottom:16px">Bu uygulama iCloud bilgilerini yalnızca IMAP/CardDAV/CalDAV üzerinden okur. Hesap değişiklikleri için Apple ID ayarlarını kullanın.</p>
+        <div style="display:flex;align-items:center;gap:16px;padding:14px;background:rgba(0,0,0,0.04);border-radius:12px;margin-bottom:12px">
+          <div id="settings-avatar" style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#0071e3,#5ac8fa);display:flex;align-items:center;justify-content:center;color:white;font-size:22px;font-weight:700;flex-shrink:0"></div>
+          <div>
+            <div id="settings-name-display" style="font-weight:700;font-size:1rem"></div>
+            <div id="settings-email-display" style="font-size:0.82rem;color:var(--apple-gray)"></div>
+          </div>
+        </div>
+        <a href="https://appleid.apple.com" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none">Apple ID Ayarlarını Aç ↗</a>
       </div>
       <div class="glass-card" style="padding:24px">
-        <h3 style="font-size:1rem;font-weight:700;margin-bottom:16px">Güvenlik</h3>
-        <div class="input-group"><input type="password" placeholder="Mevcut Şifre" /></div>
-        <div class="input-group"><input type="password" placeholder="Yeni Şifre" /></div>
-        <div class="input-group"><input type="password" placeholder="Yeni Şifre (Tekrar)" /></div>
-        <button class="btn-secondary" onclick="showToast('Şifre değişikliği için e-posta gönderildi.','success')">Şifreyi Değiştir</button>
-      </div>
-      <div class="glass-card" style="padding:24px">
-        <h3 style="font-size:1rem;font-weight:700;margin-bottom:16px">Bildirim Tercihleri</h3>
-        ${['Yeni mail bildirimleri','Fotoğraf senkronizasyon bildirimleri','Depolama uyarıları','Güvenlik bildirimleri'].map((label, i) => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.06)">
-            <span style="font-size:0.9rem">${label}</span>
-            <label style="position:relative;display:inline-block;width:44px;height:26px">
-              <input type="checkbox" ${i < 3 ? 'checked' : ''} style="opacity:0;width:0;height:0" onchange="showToast('Tercih güncellendi.','success')" />
-              <span style="position:absolute;cursor:pointer;inset:0;background:${i < 3 ? 'var(--apple-blue)' : '#ccc'};border-radius:26px;transition:background 0.2s"></span>
-            </label>
-          </div>`).join('')}
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:16px">Bu Uygulama Hakkında</h3>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:0.88rem">
+          <div style="display:flex;justify-content:space-between"><span>Mail</span><span style="color:#34c759;font-weight:600">IMAP (gerçek)</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Kişiler</span><span style="color:#34c759;font-weight:600">CardDAV (gerçek)</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Takvim</span><span style="color:#34c759;font-weight:600">CalDAV (gerçek)</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Anımsatıcılar</span><span style="color:#34c759;font-weight:600">CalDAV VTODO (gerçek)</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Notlar</span><span style="color:#ff9500;font-weight:600">Yalnızca tarayıcı</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Fotoğraflar / Drive / Bul</span><span style="color:#ff3b30;font-weight:600">API yok</span></div>
+        </div>
       </div>
       <button class="btn-secondary" style="color:#ff3b30;border-color:#ff3b30" onclick="logout()">Hesaptan Çıkış Yap</button>
     </div>`;
+
+  // Gerçek kullanıcı bilgilerini doldur
+  const emailEl = document.getElementById('settings-email-display');
+  const nameEl  = document.getElementById('settings-name-display');
+  const avatarEl= document.getElementById('settings-avatar');
+  const email   = document.getElementById('menu-email')?.textContent || '';
+  const name    = document.getElementById('menu-name')?.textContent  || '';
+  if (emailEl) emailEl.textContent = email;
+  if (nameEl)  nameEl.textContent  = name;
+  if (avatarEl)avatarEl.textContent = name[0]?.toUpperCase() || '?';
 }
 
-function saveSettings() {
-  const name = document.getElementById('settings-name').value;
-  const raw = sessionStorage.getItem('icloud_user');
-  const user = raw ? JSON.parse(raw) : {};
-  user.name = name;
-  sessionStorage.setItem('icloud_user', JSON.stringify(user));
-  loadUser();
-  showToast('Ayarlar kaydedildi.', 'success');
-}
+function saveSettings() {}
 
 // ===== NOTIFICATIONS =====
 function buildNotifications() {
