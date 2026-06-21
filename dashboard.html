@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iCloud — Dashboard</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="icon" type="image/svg+xml" href="images/icloud-icon.svg" />
+</head>
+<body class="dashboard-page">
+
+  <div class="bg-gradient"></div>
+  <div class="bg-blur-orb orb1"></div>
+  <div class="bg-blur-orb orb2"></div>
+
+  <!-- ===== HEADER ===== -->
+  <header class="icloud-header">
+    <a class="header-logo" href="dashboard.html">
+      <svg viewBox="0 0 60 40" fill="none">
+        <path d="M48.5 15.5C47.2 9.2 41.7 4.5 35 4.5C29.8 4.5 25.2 7.3 22.7 11.5C20.1 10.2 17.1 9.5 14 9.5C6.3 9.5 0 15.8 0 23.5C0 31.2 6.3 37.5 14 37.5H48C54.1 37.5 59 32.6 59 26.5C59 20.6 54.3 15.8 48.5 15.5Z" fill="#0071e3"/>
+      </svg>
+      iCloud
+    </a>
+
+    <div class="header-center">
+      <span class="search-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </span>
+      <input class="header-search" type="search" id="global-search" placeholder="iCloud'da Ara" />
+      <button class="search-clear hidden" id="search-clear-btn" onclick="clearSearch()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+
+    <div class="header-actions">
+      <button class="header-btn" title="Bildirimler" onclick="toggleNotifications()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span class="badge">3</span>
+      </button>
+
+      <button class="header-btn" title="Ayarlar" onclick="navigate('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+
+      <div class="user-avatar" id="user-avatar-btn" onclick="toggleUserMenu()">M</div>
+    </div>
+  </header>
+
+  <!-- User Dropdown -->
+  <div class="user-menu hidden" id="user-menu">
+    <div class="user-menu-header">
+      <div class="user-menu-avatar" id="menu-avatar">M</div>
+      <div>
+        <div class="user-menu-name" id="menu-name">Kullanıcı</div>
+        <div class="user-menu-email" id="menu-email">kullanici@icloud.com</div>
+      </div>
+    </div>
+    <div class="user-menu-item" onclick="navigate('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Hesap Ayarları
+    </div>
+    <div class="user-menu-item" onclick="navigate('storage')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+      Depolama Yönetimi
+    </div>
+    <div class="user-menu-divider"></div>
+    <div class="user-menu-item danger" onclick="logout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Çıkış Yap
+    </div>
+  </div>
+
+  <!-- ===== LAYOUT ===== -->
+  <div class="dashboard-layout">
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-section-title">Uygulamalar</div>
+
+      <a class="sidebar-item active" onclick="navigate('home')" href="#">
+        <div class="sidebar-icon" style="background:linear-gradient(135deg,#0071e3,#5ac8fa)">🏠</div>
+        Ana Sayfa
+      </a>
+      <a class="sidebar-item" onclick="navigate('photos')" href="#">
+        <div class="sidebar-icon photos-icon">📷</div>
+        Fotoğraflar
+        <span class="sidebar-item-right">2.847</span>
+      </a>
+      <a class="sidebar-item" onclick="navigate('drive')" href="#">
+        <div class="sidebar-icon drive-icon">☁️</div>
+        iCloud Drive
+      </a>
+      <a class="sidebar-item" onclick="navigate('mail')" href="#">
+        <div class="sidebar-icon mail-icon">✉️</div>
+        Mail
+        <span class="sidebar-item-right"><span class="badge">12</span></span>
+      </a>
+      <a class="sidebar-item" onclick="navigate('calendar')" href="#">
+        <div class="sidebar-icon calendar-icon">📅</div>
+        Takvim
+      </a>
+      <a class="sidebar-item" onclick="navigate('contacts')" href="#">
+        <div class="sidebar-icon contacts-icon">👥</div>
+        Kişiler
+        <span class="sidebar-item-right">284</span>
+      </a>
+      <a class="sidebar-item" onclick="navigate('notes')" href="#">
+        <div class="sidebar-icon notes-icon">📝</div>
+        Notlar
+      </a>
+      <a class="sidebar-item" onclick="navigate('reminders')" href="#">
+        <div class="sidebar-icon reminders-icon">⏰</div>
+        Anımsatıcılar
+        <span class="sidebar-item-right">5</span>
+      </a>
+      <a class="sidebar-item" onclick="navigate('find')" href="#">
+        <div class="sidebar-icon find-icon">📍</div>
+        Bul
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-title">Diğer</div>
+      <a class="sidebar-item" onclick="navigate('storage')" href="#">
+        <div class="sidebar-icon settings-icon">💾</div>
+        Depolama
+      </a>
+      <a class="sidebar-item" onclick="navigate('settings')" href="#">
+        <div class="sidebar-icon settings-icon">⚙️</div>
+        Ayarlar
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <div class="storage-bar-wrap">
+        <div class="storage-label">
+          <span>iCloud Depolama</span>
+          <span>19,7 GB / 50 GB</span>
+        </div>
+        <div class="storage-bar"><div class="storage-bar-fill" id="sidebar-storage-fill"></div></div>
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="main-content" id="main-content">
+
+      <!-- HOME PAGE -->
+      <div class="page-view active" id="page-home">
+        <h1 class="section-heading">Merhaba, <span id="user-greeting">Kullanıcı</span> 👋</h1>
+        <p class="section-sub">iCloud hesabınıza hoş geldiniz</p>
+
+        <div class="app-grid" id="home-app-grid">
+          <!-- injected by JS -->
+        </div>
+
+        <h2 class="section-heading" style="font-size:1.1rem;margin-bottom:14px;">Son Etkinlikler</h2>
+        <div class="recents-list" id="home-recents">
+          <!-- injected by JS -->
+        </div>
+      </div>
+
+      <!-- PHOTOS -->
+      <div class="page-view" id="page-photos">
+        <div class="photo-toolbar">
+          <h2>Fotoğraflar</h2>
+          <button class="select-btn" onclick="togglePhotoSelect()">Seç</button>
+          <button class="select-btn" onclick="openUpload('photo')">📤 Yükle</button>
+        </div>
+        <div id="photos-container"><!-- injected --></div>
+      </div>
+
+      <!-- DRIVE -->
+      <div class="page-view" id="page-drive">
+        <div class="drive-toolbar">
+          <h2>iCloud Drive</h2>
+          <div class="view-toggle">
+            <button class="view-btn active" id="list-btn" onclick="setDriveView('list')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+            </button>
+            <button class="view-btn" id="grid-btn" onclick="setDriveView('grid')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+              </svg>
+            </button>
+          </div>
+          <button class="select-btn" onclick="openUpload('drive')">📤 Yükle</button>
+          <button class="select-btn" onclick="createFolder()">📁 Klasör</button>
+        </div>
+        <div class="drive-path" id="drive-path">
+          <span class="drive-path-item" onclick="navigateDrive(null)">iCloud Drive</span>
+        </div>
+        <div id="drive-container"><!-- injected --></div>
+      </div>
+
+      <!-- MAIL -->
+      <div class="page-view" id="page-mail">
+        <div class="photo-toolbar">
+          <h2>Mail</h2>
+          <button class="select-btn" onclick="composeMail()">✏️ Yeni Mail</button>
+        </div>
+        <div class="mail-layout" id="mail-container"><!-- injected --></div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div class="page-view" id="page-calendar">
+        <div id="calendar-container"><!-- injected --></div>
+      </div>
+
+      <!-- CONTACTS -->
+      <div class="page-view" id="page-contacts">
+        <div class="photo-toolbar">
+          <h2>Kişiler</h2>
+          <button class="select-btn" onclick="showToast('Yeni kişi formu açılıyor...','info')">+ Yeni Kişi</button>
+        </div>
+        <div id="contacts-container"><!-- injected --></div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="page-view" id="page-notes">
+        <div id="notes-container"><!-- injected --></div>
+      </div>
+
+      <!-- REMINDERS -->
+      <div class="page-view" id="page-reminders">
+        <div class="photo-toolbar">
+          <h2>Anımsatıcılar</h2>
+          <button class="select-btn" onclick="addReminder()">+ Ekle</button>
+        </div>
+        <div id="reminders-container"><!-- injected --></div>
+      </div>
+
+      <!-- FIND MY -->
+      <div class="page-view" id="page-find">
+        <div class="photo-toolbar"><h2>Bul</h2></div>
+        <div id="find-container"><!-- injected --></div>
+      </div>
+
+      <!-- STORAGE -->
+      <div class="page-view" id="page-storage">
+        <div class="photo-toolbar"><h2>Depolama Yönetimi</h2></div>
+        <div id="storage-container"><!-- injected --></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page-view" id="page-settings">
+        <div class="photo-toolbar"><h2>Hesap Ayarları</h2></div>
+        <div id="settings-container"><!-- injected --></div>
+      </div>
+
+    </main>
+  </div><!-- /dashboard-layout -->
+
+  <!-- Upload Modal -->
+  <div class="modal-overlay hidden" id="upload-modal">
+    <div class="modal-card" style="max-width:480px">
+      <button class="modal-close" onclick="closeModal('upload-modal')">✕</button>
+      <h2 id="upload-modal-title">Dosya Yükle</h2>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+        <div class="upload-zone-icon">📂</div>
+        <div class="upload-zone-text">Dosyaları buraya sürükleyin</div>
+        <div class="upload-zone-sub">veya seçmek için tıklayın</div>
+      </div>
+      <input type="file" id="file-input" multiple hidden onchange="handleFileSelect(this)" />
+      <div id="upload-progress-list"></div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox hidden" id="lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <button class="lightbox-nav lightbox-prev" onclick="lightboxNav(-1)">‹</button>
+    <img class="lightbox-img" id="lightbox-img" src="" alt="" />
+    <button class="lightbox-nav lightbox-next" onclick="lightboxNav(1)">›</button>
+    <div class="lightbox-caption" id="lightbox-caption"></div>
+  </div>
+
+  <!-- Compose Mail Modal -->
+  <div class="modal-overlay hidden" id="compose-modal">
+    <div class="modal-card" style="max-width:540px;width:100%">
+      <button class="modal-close" onclick="closeModal('compose-modal')">✕</button>
+      <h2>Yeni Mail</h2>
+      <div class="input-group" style="margin-top:16px"><input type="email" id="compose-to" placeholder="Kime" /></div>
+      <div class="input-group"><input type="text" id="compose-subject" placeholder="Konu" /></div>
+      <textarea id="compose-body" style="width:100%;min-height:160px;padding:14px;border:1.5px solid rgba(0,0,0,0.12);border-radius:12px;font-family:var(--font);font-size:0.9rem;resize:vertical;outline:none;margin-bottom:16px;" placeholder="Mesajınızı yazın..."></textarea>
+      <button class="btn-primary" onclick="sendMail()">Gönder ↗</button>
+    </div>
+  </div>
+
+  <!-- Notifications Panel -->
+  <div class="user-menu hidden" id="notif-panel" style="right:60px">
+    <div class="user-menu-header">
+      <div style="font-size:1rem;font-weight:700;">Bildirimler</div>
+    </div>
+    <div id="notif-list"></div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="js/data.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
