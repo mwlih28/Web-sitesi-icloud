@@ -173,10 +173,10 @@ app.get('/api/mail/message/:uid', requireAuth, async (req, res) => {
     const lock = await client.getMailboxLock(folder);
 
     // Okundu olarak işaretle
-    await client.messageFlagsAdd({ uid }, ['\\Seen'], { uid: true });
+    await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true });
 
     // Ham kaynağı çek ve mailparser ile ayrıştır
-    const raw = await client.fetchOne({ uid }, { source: true }, { uid: true });
+    const raw = await client.fetchOne(String(uid), { source: true }, { uid: true });
     const parsed = await simpleParser(raw.source);
 
     lock.release();
@@ -216,8 +216,8 @@ app.patch('/api/mail/message/:uid/flag', requireAuth, async (req, res) => {
   try {
     await client.connect();
     const lock = await client.getMailboxLock(folder);
-    if (value) await client.messageFlagsAdd({ uid }, [flag], { uid: true });
-    else       await client.messageFlagsRemove({ uid }, [flag], { uid: true });
+    if (value) await client.messageFlagsAdd(String(uid), [flag], { uid: true });
+    else       await client.messageFlagsRemove(String(uid), [flag], { uid: true });
     lock.release();
     await client.logout();
     res.json({ ok: true });
@@ -245,10 +245,10 @@ app.delete('/api/mail/message/:uid', requireAuth, async (req, res) => {
     );
 
     if (trash) {
-      await client.messageMove({ uid }, trash.path, { uid: true });
+      await client.messageMove(String(uid), trash.path, { uid: true });
     } else {
-      await client.messageFlagsAdd({ uid }, ['\\Deleted'], { uid: true });
-      await client.messageExpunge({ uid }, { uid: true });
+      await client.messageFlagsAdd(String(uid), ['\\Deleted'], { uid: true });
+      await client.messageExpunge(String(uid), { uid: true });
     }
 
     lock.release();
