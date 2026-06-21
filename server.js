@@ -12,7 +12,10 @@ const PORT = process.env.PORT || 3000;
 
 // ===== MIDDLEWARE =====
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  setHeaders: (res) => res.setHeader('Cache-Control', 'no-store')
+}));
 app.use(cookieSession({
   name: 'icloud_sess',
   keys: [process.env.SESSION_SECRET || 'icloud-web-secret-degistir-bunu'],
@@ -24,7 +27,13 @@ app.use(cookieSession({
 
 // ===== HELPERS =====
 function requireAuth(req, res, next) {
-  if (!req.session.user) return res.status(401).json({ error: 'Oturum açılmamış' });
+  console.log('[AUTH] %s %s | cookie var mı: %s | session.user: %s',
+    req.method, req.path,
+    req.headers.cookie ? 'EVET' : 'HAYIR',
+    req.session && req.session.user ? req.session.user.email : 'YOK');
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({ error: 'Oturum açılmamış' });
+  }
   next();
 }
 
@@ -62,8 +71,10 @@ app.post('/api/login', async (req, res) => {
     await client.connect();
     await client.logout();
     req.session.user = { email, password };
+    console.log('[LOGIN] Başarılı, session ayarlandı: %s — Set-Cookie gönderiliyor', email);
     res.json({ ok: true, email });
   } catch (err) {
+    console.log('[LOGIN] Başarısız: %s', err.message);
     const msg = err.authenticationFailed
       ? 'E-posta veya şifre hatalı. Apple ID şifresi değil, Uygulamaya Özel Şifre kullanmanız gerekiyor.'
       : 'Bağlantı kurulamadı: ' + err.message;
@@ -73,7 +84,8 @@ app.post('/api/login', async (req, res) => {
 
 // POST /api/logout
 app.post('/api/logout', (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
+  req.session = null;  // cookie-session: oturumu temizle
+  res.json({ ok: true });
 });
 
 // GET /api/me
