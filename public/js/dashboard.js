@@ -128,16 +128,78 @@ function buildPhotos() {
   const dunPhotos   = PHOTOS.filter(p => p.date.startsWith('Dün'));
   const older       = PHOTOS.filter(p => !p.date.startsWith('Bugün') && !p.date.startsWith('Dün'));
 
-  c.innerHTML = renderPhotoSection('Bugün', todayPhotos) +
-                renderPhotoSection('Dün',   dunPhotos)   +
-                renderPhotoSection('21 Haziran', older);
+  c.innerHTML = `
+    <div class="photos-stats-bar">
+      <div class="photos-stat">
+        <span class="photos-stat-num">2.847</span>
+        <span class="photos-stat-label">Fotoğraf</span>
+      </div>
+      <div class="photos-stat-divider"></div>
+      <div class="photos-stat">
+        <span class="photos-stat-num">45</span>
+        <span class="photos-stat-label">Video</span>
+      </div>
+      <div class="photos-stat-divider"></div>
+      <div class="photos-stat">
+        <span class="photos-stat-num">12,4 GB</span>
+        <span class="photos-stat-label">Alan Kullanımı</span>
+      </div>
+      <span class="photos-sync-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg>
+        Az önce senkronize edildi
+      </span>
+    </div>
+
+    <div class="section-heading-row">
+      <h3 class="photos-section-title">Anılar</h3>
+      <span class="section-see-all" onclick="showToast('Tüm anılar açılıyor...','info')">Tümünü Gör</span>
+    </div>
+    <div class="memories-scroll">
+      ${MEMORIES.map(m => `
+        <div class="memory-card" onclick="showToast('${escHtml(m.title)} oynatılıyor...','info')">
+          <img src="${m.cover}" alt="${escHtml(m.title)}" class="memory-img" loading="lazy" />
+          <div class="memory-overlay">
+            <div class="memory-count">${m.count} fotoğraf</div>
+            <div class="memory-title">${m.title}</div>
+            <div class="memory-sub">${m.sub}</div>
+          </div>
+          <div class="memory-play-btn">▶</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="section-heading-row">
+      <h3 class="photos-section-title">Albümler</h3>
+      <span class="section-see-all" onclick="showToast('Tüm albümler açılıyor...','info')">Tümünü Gör</span>
+    </div>
+    <div class="albums-grid">
+      ${ALBUMS.map(a => `
+        <div class="album-tile" onclick="showToast('"${escHtml(a.name)}" albümü açılıyor...','info')">
+          <div class="album-cover-wrap">
+            <img src="${a.cover}" alt="${escHtml(a.name)}" class="album-cover-img" loading="lazy" />
+          </div>
+          <div class="album-name">${a.name}</div>
+          <div class="album-count">${a.count}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="section-heading-row" style="margin-top:4px">
+      <h3 class="photos-section-title">Son Eklenen</h3>
+    </div>
+    ${renderPhotoSection('Bugün', todayPhotos)}
+    ${renderPhotoSection('Dün', dunPhotos)}
+    ${renderPhotoSection('21 Haziran', older)}
+  `;
 }
 
 function renderPhotoSection(label, photos) {
   if (!photos.length) return '';
-  return `<div class="photo-month">${label}</div>
+  return `
+    <div class="photo-section-header">
+      <span class="photo-month">${label}</span>
+      <span class="photo-section-count">${photos.length} fotoğraf</span>
+    </div>
     <div class="photo-grid">
-      ${photos.map((p, i) => `
+      ${photos.map(p => `
         <div class="photo-cell" data-id="${p.id}" onclick="openLightbox(${p.id})">
           <img src="${p.src}" alt="${p.name}" loading="lazy" />
           <div class="photo-overlay">
@@ -678,17 +740,70 @@ function addReminder() {
 
 // ===== CONTACTS =====
 function buildContacts() {
+  renderContacts('');
+}
+
+function filterContacts(query) {
+  renderContacts(query.trim().toLowerCase());
+}
+
+function renderContacts(query) {
   const c = document.getElementById('contacts-container');
+  const filtered = CONTACTS.filter(con =>
+    !query ||
+    con.name.toLowerCase().includes(query) ||
+    con.phone.includes(query) ||
+    con.email.toLowerCase().includes(query)
+  );
+
+  const grouped = {};
+  [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'tr')).forEach(con => {
+    const letter = con.name[0].toUpperCase();
+    if (!grouped[letter]) grouped[letter] = [];
+    grouped[letter].push(con);
+  });
+
   c.innerHTML = `
-    <div class="drive-file-list">
-      ${CONTACTS.map(con => `
-        <div class="drive-file-row" style="grid-template-columns:50px 1fr 180px 180px">
-          <div style="width:36px;height:36px;border-radius:50%;background:${con.color};display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px">${con.initials}</div>
-          <div style="font-weight:600">${con.name}</div>
-          <span class="drive-file-meta">${con.phone}</span>
-          <span class="drive-file-meta">${con.email}</span>
-        </div>`).join('')}
+    <div class="contacts-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" class="contacts-search-input" placeholder="Kişi, telefon veya e-posta ara…"
+        value="${escHtml(query)}" oninput="filterContacts(this.value)" />
+    </div>
+    <div class="contacts-body">
+      ${Object.keys(grouped).length === 0
+        ? `<div style="padding:40px;text-align:center;color:var(--apple-gray)">Kişi bulunamadı.</div>`
+        : Object.entries(grouped).map(([letter, cons]) => `
+          <div class="contact-group">
+            <div class="contact-group-letter">${letter}</div>
+            ${cons.map(con => `
+              <div class="contact-row">
+                <div class="contact-avatar-circle" style="background:${con.color}">${con.initials}</div>
+                <div class="contact-row-info">
+                  <div class="contact-row-name">${con.name}</div>
+                  <div class="contact-row-sub">
+                    <span>${con.phone}</span>
+                    <span class="contact-row-dot">·</span>
+                    <span>${con.email}</span>
+                  </div>
+                </div>
+                <div class="contact-row-btns">
+                  <button class="contact-icon-btn" title="Ara" onclick="showToast('Aranıyor: ${con.phone}','info')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.71 3.41 2 2 0 0 1 3.68 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  </button>
+                  <button class="contact-icon-btn" title="Mail Gönder" onclick="composeTo('${con.email}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  </button>
+                </div>
+              </div>`).join('')}
+          </div>`).join('')}
     </div>`;
+}
+
+function composeTo(email) {
+  document.getElementById('compose-to').value = email;
+  document.getElementById('compose-subject').value = '';
+  document.getElementById('compose-body').value = '';
+  document.getElementById('compose-modal').classList.remove('hidden');
 }
 
 // ===== FIND MY =====
