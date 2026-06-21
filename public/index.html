@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iCloud Mail — Giriş</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/login.css" />
+  <link rel="icon" type="image/svg+xml" href="images/icloud-icon.svg" />
+</head>
+<body class="login-page">
+
+  <div class="bg-gradient"></div>
+  <div class="bg-blur-orb orb1"></div>
+  <div class="bg-blur-orb orb2"></div>
+
+  <div class="login-wrapper">
+
+    <!-- Logo -->
+    <div class="icloud-logo">
+      <svg viewBox="0 0 60 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48.5 15.5C47.2 9.2 41.7 4.5 35 4.5C29.8 4.5 25.2 7.3 22.7 11.5C20.1 10.2 17.1 9.5 14 9.5C6.3 9.5 0 15.8 0 23.5C0 31.2 6.3 37.5 14 37.5H48C54.1 37.5 59 32.6 59 26.5C59 20.6 54.3 15.8 48.5 15.5Z" fill="white"/>
+      </svg>
+      <span>iCloud Mail</span>
+    </div>
+
+    <!-- Login Card -->
+    <div class="login-card">
+
+      <!-- ADIM 1: E-posta -->
+      <div class="login-step" id="step-email">
+        <h1>Giriş Yap</h1>
+        <p class="subtitle">iCloud Mail hesabınıza erişmek için Apple ID e-postanızı girin.</p>
+
+        <div class="input-group">
+          <input
+            type="email"
+            id="email-input"
+            placeholder="Apple ID (örn. ad@icloud.com)"
+            autocomplete="username"
+            spellcheck="false"
+          />
+        </div>
+
+        <div class="divider"></div>
+
+        <button class="btn-primary" onclick="goToPassword()">
+          <span>Devam Et</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- ADIM 2: Şifre (App-Specific) -->
+      <div class="login-step hidden" id="step-password">
+        <button class="back-btn" onclick="goBack()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Geri
+        </button>
+
+        <h1>Uygulamaya Özel Şifre</h1>
+        <p class="subtitle" id="email-display"></p>
+
+        <!-- Bilgi kutusu -->
+        <div class="info-box">
+          <div class="info-box-icon">ℹ️</div>
+          <div class="info-box-text">
+            <strong>Apple ID şifrenizi değil</strong>, uygulamaya özel şifreyi girin.
+            <br />
+            <a href="https://appleid.apple.com/account/manage" target="_blank" class="link">appleid.apple.com</a> →
+            <em>Uygulamaya Özel Şifreler</em> → <strong>+</strong> yeni oluştur
+          </div>
+        </div>
+
+        <div class="input-group">
+          <input
+            type="password"
+            id="password-input"
+            placeholder="xxxx-xxxx-xxxx-xxxx"
+            autocomplete="current-password"
+          />
+          <button class="toggle-pw" onclick="togglePassword()" type="button">
+            <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+
+        <div id="login-error" class="error-box hidden"></div>
+
+        <button class="btn-primary" id="login-btn" onclick="doLogin()">
+          <span>Oturum Aç</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+
+        <p class="create-account">
+          Uygulamaya özel şifre nasıl oluşturulur?
+          <a href="#" class="link" onclick="showHelpModal(); return false;">Yardım</a>
+        </p>
+      </div>
+
+    </div>
+
+    <footer class="login-footer">
+      <a href="#">Gizlilik</a>
+      <span>|</span>
+      <a href="#">Kullanım Koşulları</a>
+    </footer>
+  </div>
+
+  <!-- Yardım Modal -->
+  <div class="modal-overlay hidden" id="help-modal">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeModal('help-modal')">✕</button>
+      <h2>Uygulamaya Özel Şifre Oluştur</h2>
+      <ol style="padding-left:20px;line-height:2;color:var(--apple-dark);font-size:0.92rem">
+        <li>Telefona veya bilgisayara git</li>
+        <li><strong>appleid.apple.com</strong> adresini aç</li>
+        <li>Apple ID ile giriş yap</li>
+        <li><strong>"Oturum açma ve güvenlik"</strong> bölümüne git</li>
+        <li><strong>"Uygulamaya özel şifreler"</strong> → <strong>"+"</strong> butonuna bas</li>
+        <li>Şifreye isim ver (örn. "iCloud Web")</li>
+        <li>Üretilen <strong>xxxx-xxxx-xxxx-xxxx</strong> şifreyi kopyala</li>
+        <li>Bu siteye geri dön ve şifre alanına yapıştır</li>
+      </ol>
+      <button class="btn-primary" style="margin-top:20px" onclick="closeModal('help-modal')">Anladım</button>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="js/login.js"></script>
+</body>
+</html>

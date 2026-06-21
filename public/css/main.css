@@ -180,6 +180,17 @@ input { font-family: var(--font); }
 /* ===== UTIL ===== */
 .hidden { display: none !important; }
 
+/* ===== SPINNER ===== */
+.btn-spinner {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: white;
+  display: inline-block;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* ===== NOTIFICATION BADGE ===== */
 .badge {
   display: inline-flex; align-items: center; justify-content: center;
