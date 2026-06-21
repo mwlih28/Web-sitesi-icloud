@@ -18,7 +18,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.HTTPS === 'true',  // sadece HTTPS=true ile açıkça etkinleştir
     httpOnly: true,
     maxAge: 8 * 60 * 60 * 1000  // 8 saat
   }
