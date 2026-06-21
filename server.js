@@ -10,6 +10,8 @@ const path       = require('path');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+app.set('trust proxy', 1); // Nginx arkasında çalışmak için şart
+
 // ===== MIDDLEWARE =====
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -18,8 +20,9 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.HTTPS === 'true',  // sadece HTTPS=true ile açıkça etkinleştir
+    secure: false,
     httpOnly: true,
+    sameSite: 'lax',
     maxAge: 8 * 60 * 60 * 1000  // 8 saat
   }
 }));
